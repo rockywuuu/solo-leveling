@@ -235,6 +235,10 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
     </div>
   </div>
   <div class="sync-status" id="sync-status"></div>
+  <div id="debug-bar" style="display:none;background:rgba(255,255,255,0.8);border-radius:10px;padding:8px 12px;font-size:11px;color:#0C447C;margin-bottom:10px;line-height:1.8">
+    <div id="debug-content"></div>
+    <button onclick="document.getElementById('debug-bar').style.display='none'" style="font-size:10px;color:#85B7EB;background:none;border:none;cursor:pointer;margin-top:4px">關閉</button>
+  </div>
 
   <div class="card rank-card">
     <div class="rank-top">
@@ -481,9 +485,17 @@ const BADGES=[
 const EMOJIS=['💧','🍎','😴','🚶','🧴','✏️','🎵','🎨','💻','🗣️','🌿','📝','😌','🙏','🌞','🏠','💰','👥','🌙','⏰'];
 
 let selEmoji=EMOJIS[0],selXP=10,calYear,calMonth;
-let db=null,auth=null,currentUser=null,firebaseReady=false,isSaving=false;
+let db=null,auth=null,currentUser=null,firebaseReady=false,isSaving=false,snapshotActive=false;
 
 // ── Firebase ────────────────────────────────
+function showDebug(msg){
+  const bar=document.getElementById('debug-bar');
+  const content=document.getElementById('debug-content');
+  const time=new Date().toLocaleTimeString('zh-TW');
+  content.innerHTML=`<b>🔍 診斷資訊 (${time})</b><br>`+msg;
+  bar.style.display='block';
+}
+
 function initFirebase(){
   try{
     if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){
@@ -502,14 +514,39 @@ function initFirebase(){
         btn.textContent='✓ 已同步';
         btn.classList.add('connected');
         status.textContent=user.email;
+        status.style.cursor='pointer';
+        status.onclick=()=>runDiagnostic();
         loadFromFirebase();
       } else {
         btn.textContent='登入同步';
         btn.classList.remove('connected');
         status.textContent='';
+        status.onclick=null;
       }
     });
   } catch(e){console.error('Firebase init error:',e);}
+}
+
+async function runDiagnostic(){
+  if(!db||!currentUser){showDebug('❌ Firebase 未初始化或未登入');return;}
+  showDebug('⏳ 正在測試連線...');
+  try{
+    const testWrite=await db.collection('users').doc(currentUser.uid).set({_ping:Date.now()},{merge:true});
+    const testRead=await db.collection('users').doc(currentUser.uid).get();
+    const data=testRead.data()||{};
+    const keys=Object.keys(data).filter(k=>k!=='_ping');
+    showDebug(
+      `✅ 寫入：成功<br>`+
+      `✅ 讀取：成功<br>`+
+      `📦 資料欄位：${keys.join(', ')||'(空)'}<br>`+
+      `🔥 Streak：${data.streak||0}<br>`+
+      `⚡ XP：${data.xp||0}<br>`+
+      `📅 今日完成：${(data.todayDone||[]).length} 項<br>`+
+      `💡 onSnapshot 狀態：${snapshotActive?'監聽中 ✅':'未啟動 ❌'}`
+    );
+  } catch(e){
+    showDebug(`❌ 錯誤：${e.code}<br>訊息：${e.message}`);
+  }
 }
 
 function handleAuth(){
@@ -526,6 +563,7 @@ function loadFromFirebase(){
   if(!db||!currentUser) return;
   document.getElementById('loading-overlay').classList.add('show');
   setTimeout(()=>document.getElementById('loading-overlay').classList.remove('show'),3000);
+  snapshotActive=true;
   db.collection('users').doc(currentUser.uid).onSnapshot(
     {includeMetadataChanges:false},
     doc=>{
@@ -547,6 +585,7 @@ function loadFromFirebase(){
     },
     err=>{
       document.getElementById('loading-overlay').classList.remove('show');
+      snapshotActive=false;
       console.error('Firebase sync error:',err.code, err.message);
       if(err.code==='permission-denied'){
         showToast('⚠️ Firebase 權限過期，請更新安全規則');
