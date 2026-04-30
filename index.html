@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="我獨自升級"/>
-<title>我獨自升級</title>
+<meta name="apple-mobile-web-app-title" content="Solo Leveling"/>
+<title>Solo Leveling</title>
 <link rel="manifest" href="manifest.json"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet"/>
 
 <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-firestore-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/firebase-auth-compat.min.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -20,31 +21,46 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 .app{min-height:100vh;background:linear-gradient(160deg,#DDEEFF 0%,#C8E4F8 40%,#B5D4F4 100%);padding:clamp(1rem,3vw,1.5rem)}
 .container{max-width:640px;margin:0 auto}
 
-/* header */
+/* header — V1.1: Solo Leveling 遊戲字體大標 */
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-.header h1{font-size:clamp(16px,2.5vw,19px);font-weight:500;color:#0C447C}
-.header p{font-size:clamp(11px,1.5vw,12px);color:#378ADD;margin-top:2px}
+.header h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,5vw,38px);font-weight:400;color:#0C447C;letter-spacing:0.12em;line-height:1;text-shadow:1px 1px 0 rgba(55,138,221,0.18)}
+.header p{font-size:clamp(11px,1.5vw,12px);color:#378ADD;margin-top:3px}
 .header-right{display:flex;align-items:center;gap:8px}
 .pill{font-size:clamp(10px,1.4vw,11px);color:#185FA5;background:#E6F1FB;padding:4px 10px;border-radius:999px;border:0.5px solid #B5D4F4}
-.sync-btn{font-size:11px;color:#378ADD;background:transparent;border:0.5px solid #B5D4F4;border-radius:999px;padding:4px 10px;cursor:pointer}
-.sync-btn:hover{background:#E6F1FB}
+.sync-btn{font-size:11px;color:#378ADD;background:transparent;border:0.5px solid #B5D4F4;border-radius:999px;padding:4px 12px;cursor:pointer;transition:all 0.15s}
+.sync-btn:hover{background:#E6F1FB;border-color:#85B7EB}
+.sync-btn.connected{color:#27500A;background:#EAF3DE;border-color:#97C459}
+.sync-btn.connected:hover{background:#C0DD97}
 .sync-status{font-size:10px;color:#85B7EB;margin-top:2px;text-align:right}
 
 /* card */
 .card{background:rgba(255,255,255,0.82);backdrop-filter:blur(8px);border:0.5px solid rgba(55,138,221,0.18);border-radius:14px;padding:1rem 1.25rem}
 .rank-card{margin-bottom:1rem}
-.rank-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
-.rank-icon{width:44px;height:44px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;border:0.5px solid #B5D4F4}
-.rank-main{flex:1}
-.rank-title-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.rank-top{display:flex;align-items:stretch;gap:12px;margin-bottom:10px}
+
+/* V1.1: 頭像 */
+.avatar-wrap{position:relative;width:52px;height:52px;flex-shrink:0;cursor:pointer}
+.avatar-circle{width:52px;height:52px;border-radius:50%;background:#E6F1FB;border:2px solid #B5D4F4;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden}
+.avatar-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avatar-edit{position:absolute;bottom:0;right:0;width:17px;height:17px;border-radius:50%;background:#378ADD;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;line-height:1}
+
+.rank-main{flex:1;display:flex;flex-direction:column;justify-content:space-between}
+.rank-title-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .rank-info h2{font-size:clamp(14px,2vw,15px);font-weight:500;color:#0C447C}
 .rank-tooltip-wrap{position:relative;display:inline-flex}
 .rank-tooltip-btn{width:16px;height:16px;border-radius:50%;border:0.5px solid #85B7EB;background:transparent;cursor:default;font-size:10px;color:#378ADD;display:flex;align-items:center;justify-content:center}
 .rank-tooltip{display:none;position:absolute;left:20px;top:-4px;background:white;border:0.5px solid #B5D4F4;border-radius:8px;padding:6px 10px;font-size:11px;color:#185FA5;white-space:nowrap;z-index:30;line-height:1.6}
 .rank-tooltip-wrap:hover .rank-tooltip{display:block}
+/* V1.1: 全部等級按鈕 */
+.rank-map-btn{font-size:10px;padding:3px 8px;border-radius:999px;border:0.5px solid #B5D4F4;background:#E6F1FB;color:#185FA5;cursor:pointer;white-space:nowrap}
+.rank-map-btn:hover{border-color:#85B7EB}
+
 .motto-input{width:100%;font-size:clamp(11px,1.5vw,12px);color:#378ADD;background:transparent;border:none;border-bottom:0.5px dashed #B5D4F4;padding:2px 0;outline:none}
 .motto-input::placeholder{color:#85B7EB}
 .motto-input:focus{border-bottom-color:#378ADD}
+.username-input{width:64px;font-size:11px;font-weight:500;color:#0C447C;background:transparent;border:none;border-bottom:0.5px dashed #B5D4F4;padding:1px 0;outline:none;text-align:center}
+.username-input::placeholder{color:#B5D4F4;font-weight:400}
+.username-input:focus{border-bottom-color:#378ADD}
 .xp-row{display:flex;align-items:center;gap:10px;margin-top:8px}
 .xp-track{flex:1;height:5px;background:#E6F1FB;border-radius:999px;overflow:hidden;border:0.5px solid #B5D4F4}
 .xp-fill{height:100%;background:#378ADD;border-radius:999px;transition:width 0.5s ease}
@@ -171,26 +187,49 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 .google-btn:hover{background:#F5FAFF;border-color:#85B7EB}
 .skip-btn{font-size:11px;color:#85B7EB;background:transparent;border:none;cursor:pointer;margin-top:10px;text-decoration:underline}
 
-.toast{background:white;border:0.5px solid #B5D4F4;border-radius:10px;padding:9px 14px;font-size:12px;color:#0C447C;margin-top:12px;opacity:0;transition:opacity 0.3s;pointer-events:none}
-.toast.show{opacity:1}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:white;border:0.5px solid #B5D4F4;border-radius:12px;padding:12px 20px;font-size:13px;color:#0C447C;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;z-index:300;white-space:nowrap;box-shadow:0 4px 20px rgba(12,68,124,0.12)}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 
 .loading-overlay{display:none;position:fixed;inset:0;background:rgba(181,212,244,0.5);z-index:200;align-items:center;justify-content:center;font-size:14px;color:#0C447C}
 .loading-overlay.show{display:flex}
+
+/* V1.1: 裁切頭像 modal */
+.crop-container{position:relative;width:100%;background:#111;border-radius:10px;overflow:hidden;margin-bottom:12px}
+.crop-image{display:block;width:100%;height:auto;user-select:none;touch-action:none;pointer-events:none}
+.crop-svg-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.crop-zoom-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.crop-zoom-row input{flex:1}
+.crop-zoom-row span{font-size:11px;color:#85B7EB}
+.crop-hint{font-size:11px;color:#85B7EB;text-align:center;margin-bottom:10px}
+
+/* V1.1: 等級一覽 modal */
+.rank-map-list{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+.rank-map-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:0.5px solid #E6F1FB;background:#F5FAFF}
+.rank-map-item.current{border:1.5px solid #378ADD;background:#E6F1FB}
+.rank-map-item.next-up{border:1.5px dashed #85B7EB;background:#F0F7FF}
+.rank-map-item.locked{opacity:0.4}
+.rmi-icon{font-size:24px;width:36px;text-align:center}
+.rmi-info{flex:1}
+.rmi-name{font-size:14px;font-weight:500;color:#0C447C}
+.rmi-desc{font-size:11px;color:#378ADD;margin-top:2px}
+.rmi-xp{font-size:11px;color:#85B7EB;margin-top:2px}
+.rmi-tag{font-size:10px;padding:3px 9px;border-radius:999px;font-weight:500;white-space:nowrap}
+.tag-here{background:#378ADD;color:white}
+.tag-next{background:#E6F1FB;color:#185FA5}
+.tag-done{background:#EAF3DE;color:#27500A}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="container">
 
-  <!-- Firebase 設定提示（未設定時顯示） -->
   <div id="firebase-setup-notice" style="display:none;background:#FFF8E1;border:0.5px solid #FAC775;border-radius:12px;padding:12px 14px;margin-bottom:1rem;font-size:12px;color:#633806;line-height:1.7">
     ⚠️ 尚未設定 Firebase。資料目前只存在本機。請依照說明文件設定後重新整理。
   </div>
 
   <div class="header">
-    <div><h1>我獨自升級</h1><p id="hdate"></p></div>
+    <div><h1>Solo Leveling</h1><p id="hdate"></p></div>
     <div class="header-right">
-      <span class="pill" id="rank-pill">起步者</span>
       <button class="sync-btn" id="sync-btn" onclick="handleAuth()">登入同步</button>
     </div>
   </div>
@@ -198,14 +237,25 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 
   <div class="card rank-card">
     <div class="rank-top">
-      <div class="rank-icon" id="r-icon">🌱</div>
+      <!-- V1.1: 頭像（可上傳照片） -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;flex-shrink:0;width:64px">
+        <div class="avatar-wrap" onclick="document.getElementById('avatar-input').click()" title="點此更換頭像">
+          <div class="avatar-circle" id="avatar-circle"><span id="avatar-emoji">🌱</span></div>
+          <div class="avatar-edit">✎</div>
+        </div>
+        <input class="username-input" id="username-input" placeholder="你的名稱" maxlength="20"/>
+      </div>
+      <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="onAvatarSelected(event)"/>
+
       <div class="rank-main">
+        <div style="flex:1"></div>
         <div class="rank-title-row">
           <h2 id="r-title">Lv.1 起步者</h2>
           <div class="rank-tooltip-wrap">
             <div class="rank-tooltip-btn">?</div>
             <div class="rank-tooltip" id="rank-tooltip">距離下一級還差 400 XP</div>
           </div>
+          <button class="rank-map-btn" onclick="openRankMap()">全部等級</button>
         </div>
         <input class="motto-input" id="motto-input" placeholder="寫下你的座右銘…" maxlength="40"/>
       </div>
@@ -336,11 +386,54 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
   </div>
 </div>
 
+<!-- V1.1: 裁切頭像 Modal -->
+<div class="modal-bg" id="modal-crop" onclick="closeBg(event,'crop')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>裁切頭像</h3>
+      <button class="modal-close" onclick="closeModal('crop')">✕</button>
+    </div>
+    <div class="crop-hint">拖曳圓圈選取要顯示的範圍，用滑桿縮放照片大小</div>
+    <div class="crop-container" id="crop-container">
+      <img id="crop-img" class="crop-image" src="" alt=""/>
+      <svg class="crop-svg-overlay" id="crop-svg" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
+        <defs>
+          <mask id="hole-mask">
+            <rect id="mask-rect" width="100%" height="100%" fill="white"/>
+            <circle id="crop-circle-hole" cx="160" cy="150" r="110" fill="black"/>
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="rgba(0,0,0,0.52)" mask="url(#hole-mask)"/>
+        <circle id="crop-circle-border" cx="160" cy="150" r="110" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" style="pointer-events:all;cursor:move"/>
+      </svg>
+    </div>
+    <div class="crop-zoom-row">
+      <span>縮小</span>
+      <input type="range" id="crop-zoom" min="0.3" max="4" step="0.01" value="1" oninput="onCropZoom(this.value)"/>
+      <span>放大</span>
+    </div>
+    <button class="modal-submit" onclick="confirmCrop()" style="margin-top:0">確認使用</button>
+  </div>
+</div>
+
+<!-- V1.1: 全部等級一覽 Modal -->
+<div class="modal-bg" id="modal-rank-map" onclick="closeBg(event,'rank-map')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>全部等級一覽</h3>
+      <button class="modal-close" onclick="closeModal('rank-map')">✕</button>
+    </div>
+    <div class="rank-map-list" id="rank-map-list"></div>
+  </div>
+</div>
+
 <div class="loading-overlay" id="loading-overlay">同步中…</div>
 
 <script>
 // ═══════════════════════════════════════════
-// 🔥 FIREBASE 設定區 — 填入你的 Firebase 資訊
+// 🔥 FIREBASE 設定區
 // ═══════════════════════════════════════════
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAzZi_RfbtaPRK9XghNXGHJShlsdcI6aJA",
@@ -389,7 +482,7 @@ const EMOJIS=['💧','🍎','😴','🚶','🧴','✏️','🎵','🎨','💻','
 let selEmoji=EMOJIS[0],selXP=10,calYear,calMonth;
 let db=null,auth=null,currentUser=null,firebaseReady=false;
 
-// 初始化 Firebase
+// ── Firebase ────────────────────────────────
 function initFirebase(){
   try{
     if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){
@@ -402,24 +495,26 @@ function initFirebase(){
     firebaseReady=true;
     auth.onAuthStateChanged(user=>{
       currentUser=user;
+      const btn=document.getElementById('sync-btn');
+      const status=document.getElementById('sync-status');
       if(user){
-        document.getElementById('sync-btn').textContent='已登入';
-        document.getElementById('sync-status').textContent='✓ 雲端同步中：'+user.email;
+        btn.textContent='✓ 已同步';
+        btn.classList.add('connected');
+        status.textContent=user.email;
         loadFromFirebase();
       } else {
-        document.getElementById('sync-btn').textContent='登入同步';
-        document.getElementById('sync-status').textContent='';
+        btn.textContent='登入同步';
+        btn.classList.remove('connected');
+        status.textContent='';
       }
     });
-  } catch(e){
-    console.error('Firebase init error:',e);
-  }
+  } catch(e){console.error('Firebase init error:',e);}
 }
 
 function handleAuth(){
-  if(!firebaseReady){showToast('請先設定 Firebase');return;}
+  if(!firebaseReady){showToast('Firebase 尚未設定');return;}
   if(currentUser){
-    if(confirm('確定要登出嗎？')) auth.signOut();
+    if(confirm(`確定要登出 ${currentUser.email}？`)) auth.signOut();
   } else {
     const provider=new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch(e=>showToast('登入失敗：'+e.message));
@@ -433,26 +528,39 @@ async function loadFromFirebase(){
     const doc=await db.collection('users').doc(currentUser.uid).get();
     if(doc.exists){
       const data=doc.data();
+      const localAvatar=S.avatarUrl;
       S={...defaultState(),...data};
-      render();showToast('資料已從雲端載入');
+      S.avatarUrl=localAvatar;
+      if(!S.doneDates) S.doneDates=[];
+      if(!S.dayLog) S.dayLog={};
+      if(!S.ticketUsedDates) S.ticketUsedDates=[];
+      localStorage.setItem('slv8',JSON.stringify(S));
+      render();renderAvatar();
+      document.getElementById('username-input').value=S.username||'';
+      document.getElementById('motto-input').value=S.motto||'';
+      showToast('✓ 雲端資料已載入');
     }
-  } catch(e){console.error(e);}
+  } catch(e){console.error(e);showToast('載入失敗，請檢查網路');}
   finally{document.getElementById('loading-overlay').classList.remove('show');}
 }
 
 async function saveToFirebase(){
   if(!db||!currentUser) return;
   try{
-    await db.collection('users').doc(currentUser.uid).set(S);
-  } catch(e){console.error('Firebase save error:',e);}
+    const payload={...S};
+    delete payload.avatarUrl;
+    await db.collection('users').doc(currentUser.uid).set(payload);
+  }
+  catch(e){console.error('Firebase save error:',e);}
 }
 
+// ── State ────────────────────────────────────
 function defaultState(){
   return {xp:0,level:1,streak:0,lastDate:null,firstDate:null,
     totalDone:0,perfectDays:0,perfectWeeks:0,goodWeeks:0,
     catCounts:{},earnedBadges:[],customHabits:[],todayDone:[],
     weekData:{},tickets:0,ticketUsedDates:[],doneDates:[],dayLog:{},
-    motto:'',pinnedBadge:null};
+    motto:'',pinnedBadge:null,avatarUrl:null,username:''};
 }
 
 let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
@@ -465,12 +573,12 @@ function save(){
   saveToFirebase();
 }
 
+// ── Helpers ──────────────────────────────────
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`}
 function todayStr(){return new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'})}
 function weekKey(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`}
 function dKey(y,m,d){return `${y}-${m+1}-${d}`}
 function parseKey(k){const p=k.split('-');return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]))}
-
 function getRank(xp){let r=RANKS[0];for(const rk of RANKS)if(xp>=rk.xp)r=rk;return r}
 function getNext(lv){return RANKS.find(r=>r.lv===lv+1)}
 function allHabits(){return [...DEFAULT_HABITS,...(S.customHabits||[])]}
@@ -478,6 +586,7 @@ function openModal(id){document.getElementById('modal-'+id).classList.add('show'
 function closeModal(id){document.getElementById('modal-'+id).classList.remove('show')}
 function closeBg(e,id){if(e.target===document.getElementById('modal-'+id))closeModal(id)}
 
+// ── Day / Week logic ─────────────────────────
 function checkNewDay(){
   const today=todayKey();
   if(S.lastDate===today) return;
@@ -518,6 +627,7 @@ function useTicket(){
   showToast('補簽券已使用，昨天補回了！');save();render();
 }
 
+// ── Habit toggle ─────────────────────────────
 function toggleHabit(id){
   checkNewDay();
   const habit=allHabits().find(h=>h.id===id);if(!habit) return;
@@ -571,6 +681,7 @@ function checkBadges(){
   });
 }
 
+// ── Toast ────────────────────────────────────
 let toastTimer=null;
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -578,6 +689,7 @@ function showToast(msg){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
+// ── Add habit ────────────────────────────────
 function selDiff(el){
   selXP=parseInt(el.dataset.xp);
   document.querySelectorAll('.diff-btn').forEach(d=>d.classList.remove('sel'));
@@ -597,6 +709,7 @@ function pickEmoji(e){
   document.querySelectorAll('.emoji-opt').forEach(el=>el.classList.toggle('sel',el.dataset.e===e));
 }
 
+// ── Calendar ─────────────────────────────────
 function openCal(){
   const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
   openModal('cal');renderCal();
@@ -658,10 +771,182 @@ function showDayDetail(k){
     </div>`;
 }
 
+// ── Badge pin ────────────────────────────────
 function pinBadge(id){
   S.pinnedBadge=id;save();closeModal('badge-pin');render();showToast('目標徽章已設定！');
 }
 
+// ── V1.1: Avatar upload + crop ───────────────
+// 照片自然填滿容器，圓圈可在整張照片上拖曳
+let cropEl=null,cropScale=1,cropDragging=false,cropDragSX,cropDragSY;
+let circleX=0,circleY=0,circleR=0;
+
+function onAvatarSelected(e){
+  const file=e.target.files[0];if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    openModal('crop');
+    cropEl=document.getElementById('crop-img');
+    cropEl.src=ev.target.result;
+    cropEl.onload=()=>{
+      // 讓照片自然撐開容器高度
+      cropScale=1;
+      document.getElementById('crop-zoom').value=1;
+      // 等照片渲染後計算圓圈初始位置
+      requestAnimationFrame(()=>{
+        const c=document.getElementById('crop-container');
+        const cw=c.offsetWidth,ch=c.offsetHeight;
+        circleR=Math.round(Math.min(cw,ch)*0.4);
+        circleX=Math.round(cw/2);
+        circleY=Math.round(ch/2);
+        updateCircle();
+      });
+    };
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+
+function updateCircle(){
+  const svg=document.getElementById('crop-svg');
+  const c=document.getElementById('crop-container');
+  if(!svg||!c) return;
+  const cw=c.offsetWidth,ch=c.offsetHeight;
+  svg.setAttribute('viewBox',`0 0 ${cw} ${ch}`);
+  const hole=document.getElementById('crop-circle-hole');
+  const border=document.getElementById('crop-circle-border');
+  if(!hole||!border) return;
+  hole.setAttribute('cx',circleX);hole.setAttribute('cy',circleY);hole.setAttribute('r',circleR);
+  border.setAttribute('cx',circleX);border.setAttribute('cy',circleY);border.setAttribute('r',circleR);
+  // 更新 mask rect 大小
+  const mr=document.getElementById('mask-rect');
+  if(mr){mr.setAttribute('width',cw);mr.setAttribute('height',ch);}
+}
+
+function onCropZoom(v){
+  if(!cropEl) return;
+  cropScale=parseFloat(v);
+  const c=document.getElementById('crop-container');
+  const cw=c.offsetWidth;
+  cropEl.style.width=Math.round(cropEl.naturalWidth*(cw/cropEl.naturalWidth)*cropScale)+'px';
+  cropEl.style.height='auto';
+  requestAnimationFrame(()=>{
+    const newCH=c.offsetHeight;
+    circleX=Math.max(circleR,Math.min(cw-circleR,circleX));
+    circleY=Math.max(circleR,Math.min(newCH-circleR,circleY));
+    updateCircle();
+  });
+}
+
+function confirmCrop(){
+  const c=document.getElementById('crop-container');
+  const cw=c.offsetWidth;
+  // 計算照片在容器中的顯示比例
+  const displayW=cropEl.offsetWidth||cw;
+  const scaleRatio=cropEl.naturalWidth/displayW;
+  // 換算圓圈在原始圖片上的座標
+  const imgOffsetX=(cw-displayW)/2;
+  const srcX=(circleX-circleR-imgOffsetX)*scaleRatio;
+  const srcY=(circleY-circleR)*scaleRatio;
+  const srcW=circleR*2*scaleRatio;
+  const size=300;
+  const canvas=document.createElement('canvas');
+  canvas.width=size;canvas.height=size;
+  const ctx=canvas.getContext('2d');
+  ctx.beginPath();ctx.arc(size/2,size/2,size/2,0,Math.PI*2);ctx.clip();
+  ctx.drawImage(cropEl,Math.max(0,srcX),Math.max(0,srcY),srcW,srcW,0,0,size,size);
+  S.avatarUrl=canvas.toDataURL('image/jpeg',0.92);
+  save();renderAvatar();closeModal('crop');showToast('頭像已更新！');
+}
+
+// 圓圈拖曳 — 綁在 border 上
+function setupCropDrag(){
+  const border=document.getElementById('crop-circle-border');
+  if(!border) return;
+  border.style.pointerEvents='all';
+  border.style.cursor='move';
+  border.addEventListener('mousedown',e=>{
+    cropDragging=true;
+    const c=document.getElementById('crop-container');
+    const rect=c.getBoundingClientRect();
+    cropDragSX=e.clientX-rect.left-circleX;
+    cropDragSY=e.clientY-rect.top-circleY;
+    e.preventDefault();e.stopPropagation();
+  });
+  border.addEventListener('touchstart',e=>{
+    cropDragging=true;
+    const c=document.getElementById('crop-container');
+    const rect=c.getBoundingClientRect();
+    const t=e.touches[0];
+    cropDragSX=t.clientX-rect.left-circleX;
+    cropDragSY=t.clientY-rect.top-circleY;
+    e.preventDefault();e.stopPropagation();
+  },{passive:false});
+}
+
+document.addEventListener('mousemove',e=>{
+  if(!cropDragging) return;
+  const c=document.getElementById('crop-container');if(!c) return;
+  const rect=c.getBoundingClientRect();
+  circleX=Math.max(circleR,Math.min(rect.width-circleR,e.clientX-rect.left-cropDragSX));
+  circleY=Math.max(circleR,Math.min(rect.height-circleR,e.clientY-rect.top-cropDragSY));
+  updateCircle();
+});
+document.addEventListener('touchmove',e=>{
+  if(!cropDragging) return;
+  const c=document.getElementById('crop-container');if(!c) return;
+  const rect=c.getBoundingClientRect();
+  const t=e.touches[0];
+  circleX=Math.max(circleR,Math.min(rect.width-circleR,t.clientX-rect.left-cropDragSX));
+  circleY=Math.max(circleR,Math.min(rect.height-circleR,t.clientY-rect.top-cropDragSY));
+  updateCircle();e.preventDefault();
+},{passive:false});
+document.addEventListener('mouseup',()=>{cropDragging=false;});
+document.addEventListener('touchend',()=>{cropDragging=false;});
+
+// 在 DOM 載入後設定拖曳
+document.addEventListener('DOMContentLoaded',setupCropDrag);
+
+function renderAvatar(){
+  const c=document.getElementById('avatar-circle');
+  if(S.avatarUrl){
+    c.innerHTML=`<img src="${S.avatarUrl}" alt="avatar"/>`;
+  } else {
+    const rank=getRank(S.xp||0);
+    c.innerHTML=`<span id="avatar-emoji">${rank.icon}</span>`;
+  }
+}
+
+// ── V1.1: Rank map ───────────────────────────
+function openRankMap(){
+  const curRank=getRank(S.xp||0);
+  const next=getNext(curRank.lv);
+  document.getElementById('rank-map-list').innerHTML=RANKS.map(r=>{
+    const isCurrent=r.lv===curRank.lv;
+    const isNext=next&&r.lv===next.lv;
+    const isDone=r.lv<curRank.lv;
+    let cls='rank-map-item';
+    if(isCurrent) cls+=' current';
+    else if(isNext) cls+=' next-up';
+    else if(!isDone) cls+=' locked';
+    let tag='';
+    if(isCurrent) tag='<span class="rmi-tag tag-here">你在這裡</span>';
+    else if(isNext) tag='<span class="rmi-tag tag-next">下一個目標</span>';
+    else if(isDone) tag='<span class="rmi-tag tag-done">已達成 ✓</span>';
+    return `<div class="${cls}">
+      <div class="rmi-icon">${r.icon}</div>
+      <div class="rmi-info">
+        <div class="rmi-name">Lv.${r.lv}　${r.name}</div>
+        <div class="rmi-desc">${r.desc}</div>
+        <div class="rmi-xp">${r.lv===1?'起始等級':`需要 ${r.xp.toLocaleString()} XP 解鎖`}</div>
+      </div>
+      ${tag}
+    </div>`;
+  }).join('');
+  openModal('rank-map');
+}
+
+// ── Render functions ─────────────────────────
 function renderEmojiGrid(){
   document.getElementById('emoji-grid').innerHTML=EMOJIS.map(e=>
     `<div class="emoji-opt${e===selEmoji?' sel':''}" data-e="${e}" onclick="pickEmoji('${e}')">${e}</div>`
@@ -681,9 +966,11 @@ function renderHabits(){
 
 function renderStats(){
   const rank=getRank(S.xp||0);const next=getNext(rank.lv);
-  document.getElementById('r-icon').textContent=rank.icon;
+  if(!S.avatarUrl){
+    const ae=document.getElementById('avatar-emoji');
+    if(ae) ae.textContent=rank.icon;
+  }
   document.getElementById('r-title').textContent=`Lv.${rank.lv} ${rank.name}`;
-  document.getElementById('rank-pill').textContent=rank.name;
   document.getElementById('rank-tooltip').textContent=next?`距離 Lv.${next.lv} ${next.name} 還差 ${next.xp-(S.xp||0)} XP`:'已達最高等級 🎉';
   document.getElementById('s-lv').textContent=rank.lv;
   document.getElementById('s-xp').textContent=S.xp||0;
@@ -770,19 +1057,21 @@ function render(){
   renderStats();renderHabits();renderTickets();renderPinnedBadge();renderBadgeLines();
 }
 
-// 初始化
+// ── Init ─────────────────────────────────────
 document.getElementById('hdate').textContent=todayStr();
 document.getElementById('motto-input').value=S.motto||'';
 document.getElementById('motto-input').addEventListener('input',e=>{S.motto=e.target.value;save();});
+document.getElementById('username-input').value=S.username||'';
+document.getElementById('username-input').addEventListener('input',e=>{S.username=e.target.value;save();});
 renderEmojiGrid();
 
-// badge pin modal 開啟時渲染
 document.getElementById('modal-badge-pin').addEventListener('click',function(e){
   if(e.target===this) closeModal('badge-pin');
 });
-document.querySelector('[onclick="openModal(\'badge-pin\')"]') && document.querySelector('[onclick="openModal(\'badge-pin\')"]').addEventListener('click',renderBadgePinList);
+document.querySelector('[onclick="openModal(\'badge-pin\')"]')&&
+  document.querySelector('[onclick="openModal(\'badge-pin\')"]').addEventListener('click',renderBadgePinList);
 
-checkNewDay();render();
+checkNewDay();render();renderAvatar();
 initFirebase();
 </script>
 </body>
