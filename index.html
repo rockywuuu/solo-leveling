@@ -5,10 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="Solo Leveling"/>
-<title>Solo Leveling</title>
+<meta name="apple-mobile-web-app-title" content="我獨自升級"/>
+<title>我獨自升級</title>
 <link rel="manifest" href="manifest.json"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet"/>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -23,9 +22,8 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 
 /* header */
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-.header-left{display:flex;flex-direction:column;align-items:flex-start}
-.header h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,5vw,38px);font-weight:400;color:#0C447C;letter-spacing:0.12em;line-height:1;text-shadow:1px 1px 0 rgba(55,138,221,0.2)}
-.header p{font-size:clamp(11px,1.5vw,12px);color:#378ADD;margin-top:3px}
+.header h1{font-size:clamp(16px,2.5vw,19px);font-weight:500;color:#0C447C}
+.header p{font-size:clamp(11px,1.5vw,12px);color:#378ADD;margin-top:2px}
 .header-right{display:flex;align-items:center;gap:8px}
 .pill{font-size:clamp(10px,1.4vw,11px);color:#185FA5;background:#E6F1FB;padding:4px 10px;border-radius:999px;border:0.5px solid #B5D4F4}
 .sync-btn{font-size:11px;color:#378ADD;background:transparent;border:0.5px solid #B5D4F4;border-radius:999px;padding:4px 10px;cursor:pointer}
@@ -178,36 +176,6 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 
 .loading-overlay{display:none;position:fixed;inset:0;background:rgba(181,212,244,0.5);z-index:200;align-items:center;justify-content:center;font-size:14px;color:#0C447C}
 .loading-overlay.show{display:flex}
-
-/* avatar */
-.avatar-wrap{position:relative;width:54px;height:54px;flex-shrink:0;cursor:pointer}
-.avatar-img{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #B5D4F4;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden}
-.avatar-img img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.avatar-edit-btn{position:absolute;bottom:0;right:0;width:18px;height:18px;border-radius:50%;background:#378ADD;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;color:white}
-
-/* crop modal */
-.crop-container{position:relative;width:100%;height:260px;background:#000;border-radius:10px;overflow:hidden;margin-bottom:12px}
-.crop-image{position:absolute;cursor:move;user-select:none;touch-action:none}
-.crop-circle-overlay{position:absolute;inset:0;pointer-events:none}
-.crop-actions{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-.crop-zoom{flex:1}
-.crop-hint{font-size:11px;color:#85B7EB;text-align:center;margin-bottom:10px}
-
-/* rank map modal */
-.rank-map{display:flex;flex-direction:column;gap:10px;padding:4px 0}
-.rank-map-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:0.5px solid #E6F1FB;background:#F5FAFF;transition:all 0.15s}
-.rank-map-item.current{border:1.5px solid #378ADD;background:#E6F1FB}
-.rank-map-item.next-target{border:1.5px dashed #85B7EB;background:#F0F7FF}
-.rank-map-item.locked{opacity:0.45}
-.rank-map-icon{font-size:24px;width:36px;text-align:center}
-.rank-map-info{flex:1}
-.rank-map-name{font-size:14px;font-weight:500;color:#0C447C}
-.rank-map-desc{font-size:11px;color:#378ADD;margin-top:2px}
-.rank-map-xp{font-size:11px;color:#85B7EB;margin-top:2px}
-.rank-map-badge{font-size:10px;padding:3px 8px;border-radius:999px;font-weight:500;white-space:nowrap}
-.badge-current{background:#378ADD;color:white}
-.badge-next{background:#E6F1FB;color:#185FA5}
-.badge-done{background:#EAF3DE;color:#27500A}
 </style>
 </head>
 <body>
@@ -220,7 +188,7 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
   </div>
 
   <div class="header">
-    <div class="header-left"><h1>Solo Leveling</h1><p id="hdate"></p></div>
+    <div><h1>我獨自升級</h1><p id="hdate"></p></div>
     <div class="header-right">
       <span class="pill" id="rank-pill">起步者</span>
       <button class="sync-btn" id="sync-btn" onclick="handleAuth()">登入同步</button>
@@ -230,11 +198,7 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 
   <div class="card rank-card">
     <div class="rank-top">
-      <div class="avatar-wrap" onclick="document.getElementById('avatar-file-input').click()">
-        <div class="avatar-img" id="avatar-display"><span id="avatar-emoji">🌱</span></div>
-        <div class="avatar-edit-btn">✎</div>
-      </div>
-      <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="onAvatarFileSelected(event)"/>
+      <div class="rank-icon" id="r-icon">🌱</div>
       <div class="rank-main">
         <div class="rank-title-row">
           <h2 id="r-title">Lv.1 起步者</h2>
@@ -242,7 +206,6 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
             <div class="rank-tooltip-btn">?</div>
             <div class="rank-tooltip" id="rank-tooltip">距離下一級還差 400 XP</div>
           </div>
-          <button onclick="openRankMap()" style="font-size:10px;padding:3px 8px;border-radius:999px;border:0.5px solid #B5D4F4;background:#E6F1FB;color:#185FA5;cursor:pointer;margin-left:4px">全部等級</button>
         </div>
         <input class="motto-input" id="motto-input" placeholder="寫下你的座右銘…" maxlength="40"/>
       </div>
@@ -373,49 +336,6 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
   </div>
 </div>
 
-<!-- Crop Modal -->
-<div class="modal-bg" id="modal-crop" onclick="closeBg(event,'crop')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <h3>裁切頭像</h3>
-      <button class="modal-close" onclick="closeModal('crop')">✕</button>
-    </div>
-    <div class="crop-hint">拖曳移動圖片，調整縮放，讓臉在圓圈內</div>
-    <div class="crop-container" id="crop-container">
-      <img id="crop-img" class="crop-image" src="" alt=""/>
-      <svg class="crop-circle-overlay" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <mask id="circle-mask">
-            <rect width="100%" height="100%" fill="white"/>
-            <circle id="crop-circle" cx="50%" cy="50%" r="110" fill="black"/>
-          </mask>
-        </defs>
-        <rect width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask="url(#circle-mask)"/>
-        <circle cx="50%" cy="50%" r="110" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
-      </svg>
-    </div>
-    <div class="crop-actions">
-      <span style="font-size:11px;color:#85B7EB">縮小</span>
-      <input type="range" class="crop-zoom" id="crop-zoom" min="0.5" max="3" step="0.01" value="1" oninput="updateCropZoom(this.value)"/>
-      <span style="font-size:11px;color:#85B7EB">放大</span>
-    </div>
-    <button class="modal-submit" onclick="confirmCrop()" style="margin-top:0">確認使用</button>
-  </div>
-</div>
-
-<!-- Rank Map Modal -->
-<div class="modal-bg" id="modal-rank-map" onclick="closeBg(event,'rank-map')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <h3>全部等級一覽</h3>
-      <button class="modal-close" onclick="closeModal('rank-map')">✕</button>
-    </div>
-    <div class="rank-map" id="rank-map-list"></div>
-  </div>
-</div>
-
 <div class="loading-overlay" id="loading-overlay">同步中…</div>
 
 <script>
@@ -532,7 +452,7 @@ function defaultState(){
     totalDone:0,perfectDays:0,perfectWeeks:0,goodWeeks:0,
     catCounts:{},earnedBadges:[],customHabits:[],todayDone:[],
     weekData:{},tickets:0,ticketUsedDates:[],doneDates:[],dayLog:{},
-    motto:'',pinnedBadge:null,avatarUrl:null};
+    motto:'',pinnedBadge:null};
 }
 
 let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
@@ -742,131 +662,7 @@ function pinBadge(id){
   S.pinnedBadge=id;save();closeModal('badge-pin');render();showToast('目標徽章已設定！');
 }
 
-// ── AVATAR ──────────────────────────────────
-let cropImgEl,cropX=0,cropY=0,cropScale=1,cropDragging=false,cropStartX,cropStartY,cropNaturalW,cropNaturalH;
-
-function onAvatarFileSelected(e){
-  const file=e.target.files[0];if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    openModal('crop');
-    cropImgEl=document.getElementById('crop-img');
-    cropImgEl.src=ev.target.result;
-    cropImgEl.onload=()=>{
-      cropNaturalW=cropImgEl.naturalWidth;cropNaturalH=cropImgEl.naturalHeight;
-      const container=document.getElementById('crop-container');
-      const cw=container.offsetWidth,ch=container.offsetHeight;
-      cropScale=Math.max(220/cropNaturalW,220/cropNaturalH);
-      document.getElementById('crop-zoom').value=cropScale;
-      cropX=(cw-cropNaturalW*cropScale)/2;
-      cropY=(ch-cropNaturalH*cropScale)/2;
-      applyCropTransform();
-    };
-  };
-  reader.readAsDataURL(file);
-  e.target.value='';
-}
-
-function applyCropTransform(){
-  if(!cropImgEl) return;
-  cropImgEl.style.transform=`translate(${cropX}px,${cropY}px) scale(${cropScale})`;
-  cropImgEl.style.transformOrigin='0 0';
-}
-
-function updateCropZoom(v){
-  const container=document.getElementById('crop-container');
-  const cw=container.offsetWidth,ch=container.offsetHeight;
-  const cx=cw/2,cy=ch/2;
-  const oldScale=cropScale;
-  cropScale=parseFloat(v);
-  cropX=cx-(cx-cropX)*(cropScale/oldScale);
-  cropY=cy-(cy-cropY)*(cropScale/oldScale);
-  applyCropTransform();
-}
-
-(function setupCropDrag(){
-  document.addEventListener('DOMContentLoaded',()=>{
-    const container=document.getElementById('crop-container');
-    if(!container) return;
-    const start=e=>{
-      if(!cropImgEl) return;
-      cropDragging=true;
-      const pt=e.touches?e.touches[0]:e;
-      cropStartX=pt.clientX-cropX;cropStartY=pt.clientY-cropY;
-      e.preventDefault();
-    };
-    const move=e=>{
-      if(!cropDragging) return;
-      const pt=e.touches?e.touches[0]:e;
-      cropX=pt.clientX-cropStartX;cropY=pt.clientY-cropStartY;
-      applyCropTransform();e.preventDefault();
-    };
-    const end=()=>{cropDragging=false;};
-    container.addEventListener('mousedown',start);
-    container.addEventListener('touchstart',start,{passive:false});
-    document.addEventListener('mousemove',move);
-    document.addEventListener('touchmove',move,{passive:false});
-    document.addEventListener('mouseup',end);
-    document.addEventListener('touchend',end);
-  });
-})();
-
-function confirmCrop(){
-  const container=document.getElementById('crop-container');
-  const cw=container.offsetWidth,ch=container.offsetHeight;
-  const r=110,cx=cw/2,cy=ch/2;
-  const canvas=document.createElement('canvas');
-  const size=220;canvas.width=size;canvas.height=size;
-  const ctx=canvas.getContext('2d');
-  ctx.beginPath();ctx.arc(size/2,size/2,size/2,0,Math.PI*2);ctx.clip();
-  const sx=(cx-r-cropX)/cropScale,sy=(cy-r-cropY)/cropScale,sw=size/cropScale;
-  ctx.drawImage(cropImgEl,sx,sy,sw,sw,0,0,size,size);
-  const dataUrl=canvas.toDataURL('image/jpeg',0.85);
-  S.avatarUrl=dataUrl;save();
-  renderAvatar();closeModal('crop');showToast('頭像已更新！');
-}
-
-function renderAvatar(){
-  const disp=document.getElementById('avatar-display');
-  if(S.avatarUrl){
-    disp.innerHTML=`<img src="${S.avatarUrl}" alt="avatar"/>`;
-  } else {
-    const rank=getRank(S.xp||0);
-    disp.innerHTML=`<span id="avatar-emoji">${rank.icon}</span>`;
-  }
-}
-
-// ── RANK MAP ────────────────────────────────
-function openRankMap(){
-  const rank=getRank(S.xp||0);
-  const next=getNext(rank.lv);
-  document.getElementById('rank-map-list').innerHTML=RANKS.map(r=>{
-    const isCurrent=r.lv===rank.lv;
-    const isNext=next&&r.lv===next.lv;
-    const isDone=r.lv<rank.lv;
-    let cls='rank-map-item';
-    if(isCurrent) cls+=' current';
-    else if(isNext) cls+=' next-target';
-    else if(!isDone) cls+=' locked';
-    let badge='';
-    if(isCurrent) badge='<span class="rank-map-badge badge-current">你在這裡</span>';
-    else if(isNext) badge='<span class="rank-map-badge badge-next">下一個目標</span>';
-    else if(isDone) badge='<span class="rank-map-badge badge-done">已達成</span>';
-    const xpLabel=r.lv===1?'起始等級':`需要 ${r.xp.toLocaleString()} XP`;
-    return `<div class="${cls}">
-      <div class="rank-map-icon">${r.icon}</div>
-      <div class="rank-map-info">
-        <div class="rank-map-name">Lv.${r.lv} ${r.name}</div>
-        <div class="rank-map-desc">${r.desc}</div>
-        <div class="rank-map-xp">${xpLabel}</div>
-      </div>
-      ${badge}
-    </div>`;
-  }).join('');
-  openModal('rank-map');
-}
-
-
+function renderEmojiGrid(){
   document.getElementById('emoji-grid').innerHTML=EMOJIS.map(e=>
     `<div class="emoji-opt${e===selEmoji?' sel':''}" data-e="${e}" onclick="pickEmoji('${e}')">${e}</div>`
   ).join('');
@@ -885,7 +681,7 @@ function renderHabits(){
 
 function renderStats(){
   const rank=getRank(S.xp||0);const next=getNext(rank.lv);
-  if(!S.avatarUrl) document.getElementById('avatar-emoji')&&(document.getElementById('avatar-emoji').textContent=rank.icon);
+  document.getElementById('r-icon').textContent=rank.icon;
   document.getElementById('r-title').textContent=`Lv.${rank.lv} ${rank.name}`;
   document.getElementById('rank-pill').textContent=rank.name;
   document.getElementById('rank-tooltip').textContent=next?`距離 Lv.${next.lv} ${next.name} 還差 ${next.xp-(S.xp||0)} XP`:'已達最高等級 🎉';
@@ -986,7 +782,7 @@ document.getElementById('modal-badge-pin').addEventListener('click',function(e){
 });
 document.querySelector('[onclick="openModal(\'badge-pin\')"]') && document.querySelector('[onclick="openModal(\'badge-pin\')"]').addEventListener('click',renderBadgePinList);
 
-checkNewDay();render();renderAvatar();
+checkNewDay();render();
 initFirebase();
 </script>
 </body>
