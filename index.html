@@ -527,26 +527,30 @@ function loadFromFirebase(){
   document.getElementById('loading-overlay').classList.add('show');
   setTimeout(()=>document.getElementById('loading-overlay').classList.remove('show'),3000);
   db.collection('users').doc(currentUser.uid).onSnapshot(
+    {includeMetadataChanges:false},
     doc=>{
       document.getElementById('loading-overlay').classList.remove('show');
-      if(isSaving) return;
-      if(doc.exists){
-        const data=doc.data();
-        const localAvatar=S.avatarUrl;
-        S={...defaultState(),...data};
-        S.avatarUrl=localAvatar;
-        if(!S.doneDates) S.doneDates=[];
-        if(!S.dayLog) S.dayLog={};
-        if(!S.ticketUsedDates) S.ticketUsedDates=[];
-        localStorage.setItem('slv8',JSON.stringify(S));
-        render();renderAvatar();
-        document.getElementById('username-input').value=S.username||'';
-        document.getElementById('motto-input').value=S.motto||'';
-      }
+      if(!doc.exists) return;
+      // metadata.hasPendingWrites = 這筆更新來自本機，略過避免覆蓋
+      if(doc.metadata.hasPendingWrites) return;
+      const data=doc.data();
+      const localAvatar=S.avatarUrl;
+      S={...defaultState(),...data};
+      S.avatarUrl=localAvatar;
+      if(!S.doneDates) S.doneDates=[];
+      if(!S.dayLog) S.dayLog={};
+      if(!S.ticketUsedDates) S.ticketUsedDates=[];
+      localStorage.setItem('slv8',JSON.stringify(S));
+      render();renderAvatar();
+      document.getElementById('username-input').value=S.username||'';
+      document.getElementById('motto-input').value=S.motto||'';
     },
     err=>{
       document.getElementById('loading-overlay').classList.remove('show');
-      console.error('Firebase sync error:',err);
+      console.error('Firebase sync error:',err.code, err.message);
+      if(err.code==='permission-denied'){
+        showToast('⚠️ Firebase 權限過期，請更新安全規則');
+      }
     }
   );
 }
@@ -554,13 +558,14 @@ function loadFromFirebase(){
 async function saveToFirebase(){
   if(!db||!currentUser) return;
   try{
-    isSaving=true;
     const payload={...S};
     delete payload.avatarUrl;
     await db.collection('users').doc(currentUser.uid).set(payload);
   }
-  catch(e){console.error('Firebase save error:',e);}
-  finally{setTimeout(()=>{isSaving=false;},1000);}
+  catch(e){
+    console.error('Firebase save error:',e.code, e.message);
+    if(e.code==='permission-denied') showToast('⚠️ 同步失敗：Firebase 權限過期');
+  }
 }
 
 // ── State ────────────────────────────────────
