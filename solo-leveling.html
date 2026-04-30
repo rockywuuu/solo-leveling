@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="我獨自升級"/>
+<title>我獨自升級</title>
+<link rel="manifest" href="manifest.json"/>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;font-size:clamp(13px,1.8vw,15px)}
+.app{min-height:100vh;background:linear-gradient(160deg,#DDEEFF 0%,#C8E4F8 40%,#B5D4F4 100%);padding:clamp(1rem,3vw,1.5rem)}
+.container{max-width:640px;margin:0 auto}
+
+/* header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.header h1{font-size:clamp(16px,2.5vw,19px);font-weight:500;color:#0C447C}
+.header p{font-size:clamp(11px,1.5vw,12px);color:#378ADD;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px}
+.pill{font-size:clamp(10px,1.4vw,11px);color:#185FA5;background:#E6F1FB;padding:4px 10px;border-radius:999px;border:0.5px solid #B5D4F4}
+.sync-btn{font-size:11px;color:#378ADD;background:transparent;border:0.5px solid #B5D4F4;border-radius:999px;padding:4px 10px;cursor:pointer}
+.sync-btn:hover{background:#E6F1FB}
+.sync-status{font-size:10px;color:#85B7EB;margin-top:2px;text-align:right}
+
+/* card */
+.card{background:rgba(255,255,255,0.82);backdrop-filter:blur(8px);border:0.5px solid rgba(55,138,221,0.18);border-radius:14px;padding:1rem 1.25rem}
+.rank-card{margin-bottom:1rem}
+.rank-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.rank-icon{width:44px;height:44px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;border:0.5px solid #B5D4F4}
+.rank-main{flex:1}
+.rank-title-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.rank-info h2{font-size:clamp(14px,2vw,15px);font-weight:500;color:#0C447C}
+.rank-tooltip-wrap{position:relative;display:inline-flex}
+.rank-tooltip-btn{width:16px;height:16px;border-radius:50%;border:0.5px solid #85B7EB;background:transparent;cursor:default;font-size:10px;color:#378ADD;display:flex;align-items:center;justify-content:center}
+.rank-tooltip{display:none;position:absolute;left:20px;top:-4px;background:white;border:0.5px solid #B5D4F4;border-radius:8px;padding:6px 10px;font-size:11px;color:#185FA5;white-space:nowrap;z-index:30;line-height:1.6}
+.rank-tooltip-wrap:hover .rank-tooltip{display:block}
+.motto-input{width:100%;font-size:clamp(11px,1.5vw,12px);color:#378ADD;background:transparent;border:none;border-bottom:0.5px dashed #B5D4F4;padding:2px 0;outline:none}
+.motto-input::placeholder{color:#85B7EB}
+.motto-input:focus{border-bottom-color:#378ADD}
+.xp-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.xp-track{flex:1;height:5px;background:#E6F1FB;border-radius:999px;overflow:hidden;border:0.5px solid #B5D4F4}
+.xp-fill{height:100%;background:#378ADD;border-radius:999px;transition:width 0.5s ease}
+.xp-label{font-size:clamp(10px,1.4vw,11px);color:#185FA5;white-space:nowrap;min-width:80px;text-align:right}
+.pinned-badge{display:flex;align-items:center;gap:8px;background:#E6F1FB;border:0.5px solid #B5D4F4;border-radius:10px;padding:7px 10px;cursor:pointer;min-width:110px;transition:border-color 0.15s}
+.pinned-badge:hover{border-color:#85B7EB}
+.pinned-badge-icon{font-size:16px;width:20px;text-align:center}
+.pinned-badge-name{font-size:11px;font-weight:500;color:#185FA5;line-height:1.2}
+.pinned-badge-sub{font-size:10px;color:#378ADD;margin-top:1px}
+
+/* stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:rgba(255,255,255,0.7);border:0.5px solid rgba(55,138,221,0.2);border-radius:10px;padding:0.6rem;text-align:center}
+.stat.clickable{cursor:pointer;transition:border-color 0.15s}
+.stat.clickable:hover{border-color:#85B7EB}
+.stat-n{font-size:clamp(16px,2.5vw,19px);font-weight:500;color:#0C447C}
+.stat-l{font-size:clamp(10px,1.4vw,11px);color:#378ADD;margin-top:2px}
+.streak-n{color:#BA7517}
+.sec-label{font-size:clamp(10px,1.4vw,11px);font-weight:500;color:#185FA5;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;margin-top:1.25rem}
+
+/* habits */
+.habit-list{display:flex;flex-direction:column;gap:6px}
+.habit-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.8);border:0.5px solid rgba(55,138,221,0.18);border-radius:10px;padding:0.7rem 1rem;cursor:pointer;transition:border-color 0.15s}
+.habit-row:hover{border-color:#85B7EB}
+.habit-row.done{background:rgba(230,241,251,0.7)}
+.chk{width:20px;height:20px;border-radius:50%;border:1.5px solid #85B7EB;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:transparent;transition:all 0.2s}
+.habit-row.done .chk{background:#378ADD;border-color:#378ADD;color:white}
+.h-emoji{font-size:15px;width:18px;text-align:center}
+.h-name{font-size:clamp(13px,1.8vw,14px);color:#0C447C}
+.habit-row.done .h-name{color:#85B7EB;text-decoration:line-through}
+.h-xp{font-size:clamp(10px,1.4vw,11px);color:#85B7EB;margin-top:1px}
+.h-xp b{color:#3B6D11;font-weight:500}
+
+/* tools */
+.tools-row{display:flex;gap:8px;margin-top:8px}
+.tool-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;font-size:clamp(12px,1.6vw,13px);border-radius:10px;border:0.5px solid rgba(55,138,221,0.25);background:rgba(255,255,255,0.65);cursor:pointer;color:#185FA5;transition:all 0.15s}
+.tool-btn:hover{background:rgba(255,255,255,0.9);border-color:#85B7EB}
+
+/* badge lines */
+.badge-lines{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.badge-line-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.7);border:0.5px solid rgba(55,138,221,0.18);border-radius:10px;padding:10px 14px;cursor:pointer;position:relative;transition:border-color 0.15s}
+.badge-line-row:hover{border-color:#85B7EB}
+.badge-line-title{font-size:clamp(12px,1.7vw,13px);font-weight:500;color:#0C447C}
+.badge-line-sub{font-size:clamp(10px,1.4vw,11px);color:#378ADD;margin-top:1px}
+.badge-line-icons{display:flex;gap:4px}
+.badge-mini{width:28px;height:28px;border-radius:8px;background:#E6F1FB;border:0.5px solid #B5D4F4;display:flex;align-items:center;justify-content:center;font-size:14px}
+.badge-mini.earned{background:#C0DD97;border-color:#97C459}
+.badge-line-popup{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:white;border:0.5px solid #B5D4F4;border-radius:12px;padding:12px;z-index:40;box-shadow:0 4px 16px rgba(55,138,221,0.1)}
+.badge-line-row:hover .badge-line-popup{display:block}
+.popup-badge-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.popup-badge-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;border:0.5px solid #E6F1FB;background:#F5FAFF;cursor:pointer;transition:border-color 0.15s}
+.popup-badge-item:hover{border-color:#85B7EB}
+.popup-badge-item.earned{background:#EAF3DE;border-color:#C0DD97}
+.popup-badge-icon{font-size:18px;width:22px;text-align:center}
+.popup-badge-name{font-size:12px;font-weight:500;color:#0C447C}
+.popup-badge-desc{font-size:10px;color:#378ADD;margin-top:1px}
+.popup-badge-prog{font-size:10px;color:#85B7EB;margin-top:2px}
+.pin-hint{font-size:10px;color:#85B7EB;text-align:center;margin-top:8px}
+
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(12,68,124,0.25);z-index:100;align-items:flex-end;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:white;border-radius:16px 16px 0 0;padding:1.25rem;width:100%;max-width:640px;max-height:85vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:#B5D4F4;border-radius:999px;margin:0 auto 1rem}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.modal-header h3{font-size:15px;font-weight:500;color:#0C447C}
+.modal-close{width:26px;height:26px;border-radius:50%;border:0.5px solid #B5D4F4;background:transparent;cursor:pointer;font-size:13px;color:#378ADD;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:#E6F1FB}
+.field-label{font-size:11px;font-weight:500;color:#185FA5;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;margin-top:12px}
+.field-label:first-of-type{margin-top:0}
+.name-input{width:100%;font-size:14px;padding:9px 12px;border-radius:10px;border:0.5px solid #B5D4F4;background:#F5FAFF;color:#0C447C;outline:none}
+.name-input:focus{border-color:#378ADD}
+.emoji-grid{display:flex;flex-wrap:wrap;gap:6px}
+.emoji-opt{width:36px;height:36px;border-radius:8px;border:0.5px solid #B5D4F4;background:#F5FAFF;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.emoji-opt:hover{border-color:#85B7EB}
+.emoji-opt.sel{border:1.5px solid #378ADD;background:#E6F1FB}
+.diff-row{display:flex;gap:8px}
+.diff-btn{flex:1;padding:8px;font-size:12px;border-radius:10px;border:0.5px solid #B5D4F4;background:transparent;cursor:pointer;color:#185FA5;transition:all 0.15s;text-align:center}
+.diff-btn:hover{background:#E6F1FB}
+.diff-btn.sel{border:1.5px solid #378ADD;background:#E6F1FB;font-weight:500;color:#0C447C}
+.modal-submit{width:100%;padding:10px;font-size:14px;border-radius:10px;border:none;background:#378ADD;cursor:pointer;color:white;font-weight:500;margin-top:16px}
+.modal-submit:hover{background:#185FA5}
+
+/* ticket */
+.ticket-body{display:flex;flex-direction:column;gap:12px}
+.ticket-top{display:flex;align-items:center;gap:10px}
+.ticket-dots{display:flex;gap:8px;flex:1}
+.ticket-dot{width:14px;height:14px;border-radius:50%;background:#B5D4F4;transition:background 0.2s}
+.ticket-dot.active{background:#378ADD}
+.ticket-meta{font-size:12px;color:#185FA5}
+.use-ticket-btn{font-size:12px;padding:7px 14px;border-radius:10px;border:0.5px solid #85B7EB;background:transparent;cursor:pointer;color:#185FA5}
+.use-ticket-btn:hover:not(:disabled){background:#E6F1FB}
+.use-ticket-btn:disabled{opacity:0.35;cursor:default}
+.ticket-desc{font-size:12px;color:#378ADD;line-height:1.6}
+
+/* calendar */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-nav button{padding:4px 12px;font-size:12px;border:0.5px solid #B5D4F4;border-radius:8px;background:transparent;cursor:pointer;color:#185FA5}
+.cal-nav button:hover{background:#E6F1FB}
+.cal-month-label{font-size:13px;font-weight:500;color:#0C447C}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{font-size:10px;color:#85B7EB;text-align:center;padding:2px 0}
+.cal-day{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#85B7EB}
+.cal-day.in-month{color:#378ADD}
+.cal-day.done{background:#EAF3DE;color:#3B6D11;font-weight:500;cursor:pointer}
+.cal-day.done:hover{background:#C0DD97}
+.cal-day.today{border:1.5px solid #378ADD;color:#0C447C}
+.cal-day.missed{background:#F0F6FD;color:#B5D4F4}
+.cal-legend{display:flex;gap:12px;margin-top:10px;justify-content:center}
+.cal-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#378ADD}
+.cal-legend-dot{width:10px;height:10px;border-radius:3px}
+.day-detail{background:#F5FAFF;border-radius:10px;border:0.5px solid #B5D4F4;padding:10px 12px;margin-top:10px}
+.day-detail-header{font-size:12px;font-weight:500;color:#0C447C;margin-bottom:6px}
+.day-detail-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#185FA5;margin-bottom:4px}
+.day-detail-xp{font-size:12px;color:#3B6D11;font-weight:500;margin-top:6px}
+.day-detail-empty{font-size:12px;color:#85B7EB;font-style:italic}
+.cal-tip{font-size:11px;color:#378ADD;text-align:center;margin-top:8px}
+
+/* firebase login */
+.login-card{background:rgba(255,255,255,0.9);border-radius:14px;border:0.5px solid #B5D4F4;padding:1.5rem;text-align:center;margin-bottom:1rem}
+.login-card h3{font-size:15px;font-weight:500;color:#0C447C;margin-bottom:6px}
+.login-card p{font-size:12px;color:#378ADD;margin-bottom:1rem;line-height:1.6}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;font-size:13px;border-radius:10px;border:0.5px solid #B5D4F4;background:white;cursor:pointer;color:#0C447C;font-weight:500}
+.google-btn:hover{background:#F5FAFF;border-color:#85B7EB}
+.skip-btn{font-size:11px;color:#85B7EB;background:transparent;border:none;cursor:pointer;margin-top:10px;text-decoration:underline}
+
+.toast{background:white;border:0.5px solid #B5D4F4;border-radius:10px;padding:9px 14px;font-size:12px;color:#0C447C;margin-top:12px;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(181,212,244,0.5);z-index:200;align-items:center;justify-content:center;font-size:14px;color:#0C447C}
+.loading-overlay.show{display:flex}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="container">
+
+  <!-- Firebase 設定提示（未設定時顯示） -->
+  <div id="firebase-setup-notice" style="display:none;background:#FFF8E1;border:0.5px solid #FAC775;border-radius:12px;padding:12px 14px;margin-bottom:1rem;font-size:12px;color:#633806;line-height:1.7">
+    ⚠️ 尚未設定 Firebase。資料目前只存在本機。請依照說明文件設定後重新整理。
+  </div>
+
+  <div class="header">
+    <div><h1>我獨自升級</h1><p id="hdate"></p></div>
+    <div class="header-right">
+      <span class="pill" id="rank-pill">起步者</span>
+      <button class="sync-btn" id="sync-btn" onclick="handleAuth()">登入同步</button>
+    </div>
+  </div>
+  <div class="sync-status" id="sync-status"></div>
+
+  <div class="card rank-card">
+    <div class="rank-top">
+      <div class="rank-icon" id="r-icon">🌱</div>
+      <div class="rank-main">
+        <div class="rank-title-row">
+          <h2 id="r-title">Lv.1 起步者</h2>
+          <div class="rank-tooltip-wrap">
+            <div class="rank-tooltip-btn">?</div>
+            <div class="rank-tooltip" id="rank-tooltip">距離下一級還差 400 XP</div>
+          </div>
+        </div>
+        <input class="motto-input" id="motto-input" placeholder="寫下你的座右銘…" maxlength="40"/>
+      </div>
+      <div style="margin-left:10px">
+        <div class="pinned-badge" onclick="openModal('badge-pin')">
+          <div id="pin-icon" style="font-size:16px;width:20px;text-align:center">🎯</div>
+          <div>
+            <div class="pinned-badge-name" id="pin-name">選擇目標</div>
+            <div class="pinned-badge-sub" id="pin-sub">點此釘選</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="xp-row">
+      <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+      <span class="xp-label" id="xp-label">0 / 400 XP</span>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-n" id="s-lv">1</div><div class="stat-l">等級</div></div>
+    <div class="stat"><div class="stat-n" id="s-xp">0</div><div class="stat-l">總 XP</div></div>
+    <div class="stat clickable" onclick="openCal()">
+      <div class="stat-n streak-n" id="s-streak">0 🔥</div><div class="stat-l">連續天數 ↗</div>
+    </div>
+    <div class="stat"><div class="stat-n" id="s-done">0/4</div><div class="stat-l">今日完成</div></div>
+  </div>
+
+  <div class="sec-label">今日任務</div>
+  <div class="habit-list" id="habit-list"></div>
+
+  <div class="sec-label">其他功能</div>
+  <div class="tools-row">
+    <button class="tool-btn" onclick="openModal('add')">＋ 新增習慣</button>
+    <button class="tool-btn" onclick="openModal('ticket')">🎫 補簽券 <span id="ticket-count-badge" style="background:#E6F1FB;color:#185FA5;border-radius:999px;padding:1px 7px;font-size:11px">0</span></button>
+  </div>
+
+  <div class="sec-label">成就徽章</div>
+  <div class="badge-lines" id="badge-lines"></div>
+
+  <div><div class="toast" id="toast"></div></div>
+</div>
+</div>
+
+<!-- Add Habit Modal -->
+<div class="modal-bg" id="modal-add" onclick="closeBg(event,'add')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>新增習慣</h3>
+      <button class="modal-close" onclick="closeModal('add')">✕</button>
+    </div>
+    <div class="field-label">習慣名稱</div>
+    <input class="name-input" id="c-name" placeholder="例：每日喝水 2000ml" maxlength="18"/>
+    <div class="field-label">選擇圖示</div>
+    <div class="emoji-grid" id="emoji-grid"></div>
+    <div class="field-label">難度</div>
+    <div class="diff-row">
+      <button class="diff-btn sel" data-xp="10" onclick="selDiff(this)">簡單<br><span style="font-size:10px;opacity:0.7">+10 XP</span></button>
+      <button class="diff-btn" data-xp="15" onclick="selDiff(this)">普通<br><span style="font-size:10px;opacity:0.7">+15 XP</span></button>
+      <button class="diff-btn" data-xp="25" onclick="selDiff(this)">困難<br><span style="font-size:10px;opacity:0.7">+25 XP</span></button>
+    </div>
+    <button class="modal-submit" onclick="addHabit()">新增習慣</button>
+  </div>
+</div>
+
+<!-- Ticket Modal -->
+<div class="modal-bg" id="modal-ticket" onclick="closeBg(event,'ticket')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>補簽券</h3>
+      <button class="modal-close" onclick="closeModal('ticket')">✕</button>
+    </div>
+    <div class="ticket-body">
+      <div class="ticket-top">
+        <div class="ticket-dots" id="ticket-dots"></div>
+        <span class="ticket-meta" id="ticket-info">下次獲得：14天後</span>
+        <button class="use-ticket-btn" id="use-ticket-btn" onclick="useTicket()">使用補簽</button>
+      </div>
+      <div class="ticket-desc">每 14 天自動累積一張，最多囤 3 張。使用後補回前一天的連續天數。</div>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar Modal -->
+<div class="modal-bg" id="modal-cal" onclick="closeBg(event,'cal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>連續天數記錄</h3>
+      <button class="modal-close" onclick="closeModal('cal')">✕</button>
+    </div>
+    <div class="cal-nav">
+      <button onclick="calPrev()">‹ 上個月</button>
+      <span class="cal-month-label" id="cal-month-label"></span>
+      <button onclick="calNext()">下個月 ›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#EAF3DE"></div>完成（≥2項）</div>
+      <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#F0F6FD;border:0.5px solid #B5D4F4"></div>未完成</div>
+    </div>
+    <div id="day-detail-area"></div>
+    <div class="cal-tip" id="cal-tip">點綠色日期查看當天完成詳情</div>
+  </div>
+</div>
+
+<!-- Badge Pin Modal -->
+<div class="modal-bg" id="modal-badge-pin" onclick="closeBg(event,'badge-pin')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>選擇目標徽章</h3>
+      <button class="modal-close" onclick="closeModal('badge-pin')">✕</button>
+    </div>
+    <div id="pin-badge-list" style="display:flex;flex-direction:column;gap:8px;margin-top:4px"></div>
+  </div>
+</div>
+
+<!-- Level Up Modal -->
+<div class="modal-bg" id="modal-lu" onclick="closeBg(event,'lu')">
+  <div class="modal" style="border-radius:16px;max-width:320px;margin:auto;text-align:center;padding:2rem" onclick="event.stopPropagation()">
+    <div id="lu-ico" style="font-size:32px;margin-bottom:10px">🌿</div>
+    <h3 id="lu-title" style="font-size:19px;color:#0C447C;margin-bottom:6px">升級！</h3>
+    <p id="lu-desc" style="font-size:13px;color:#378ADD;margin-bottom:1.25rem">新稱號解鎖</p>
+    <button class="modal-submit" onclick="closeModal('lu')" style="margin-top:0">繼續修煉</button>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay">同步中…</div>
+
+<script>
+// ═══════════════════════════════════════════
+// 🔥 FIREBASE 設定區 — 填入你的 Firebase 資訊
+// ═══════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+// ═══════════════════════════════════════════
+
+const RANKS=[
+  {lv:1,name:'起步者',desc:'踏上自我精進之路',icon:'🌱',xp:0},
+  {lv:2,name:'自律實踐者',desc:'習慣的力量開始萌芽',icon:'🌿',xp:400},
+  {lv:3,name:'深根修煉者',desc:'你已超越大多數人',icon:'🌳',xp:1200},
+  {lv:4,name:'長期主義者',desc:'意志如根，習慣如土',icon:'⚖️',xp:2800},
+  {lv:5,name:'複利人生家',desc:'小行動，長期複利',icon:'✦',xp:5000},
+];
+const DEFAULT_HABITS=[
+  {id:'exercise',name:'運動',emoji:'💪',xp:15,cat:'運動'},
+  {id:'reading',name:'閱讀',emoji:'📖',xp:20,cat:'閱讀'},
+  {id:'meditation',name:'冥想',emoji:'🧘',xp:15,cat:'冥想'},
+  {id:'learning',name:'學習/技能',emoji:'🎓',xp:20,cat:'學習'},
+];
+const BADGE_LINES=[
+  {id:'milestone',name:'里程碑',sub:'時間的力量'},
+  {id:'depth',name:'深度',sub:'累積的厚度'},
+  {id:'quality',name:'質量',sub:'全力以赴'},
+];
+const BADGES=[
+  {id:'seed',icon:'🌱',name:'第一粒種子',line:'milestone',desc:'完成第 1 次任何習慣',prog:s=>Math.min(1,s.totalDone||0),total:1,unit:'次'},
+  {id:'week7',icon:'🔥',name:'七日之約',line:'milestone',desc:'連續 7 天不間斷',prog:s=>Math.min(7,s.streak||0),total:7,unit:'天'},
+  {id:'month',icon:'🌙',name:'一月守恆',line:'milestone',desc:'連續 30 天不間斷',prog:s=>Math.min(30,s.streak||0),total:30,unit:'天'},
+  {id:'day100',icon:'⚡',name:'百日蛻變',line:'milestone',desc:'連續 100 天不間斷',prog:s=>Math.min(100,s.streak||0),total:100,unit:'天'},
+  {id:'athlete',icon:'💪',name:'身體資本',line:'depth',desc:'運動累積完成 30 次',prog:s=>Math.min(30,(s.catCounts&&s.catCounts['運動'])||0),total:30,unit:'次'},
+  {id:'scholar',icon:'📖',name:'知識複利',line:'depth',desc:'閱讀累積完成 30 次',prog:s=>Math.min(30,(s.catCounts&&s.catCounts['閱讀'])||0),total:30,unit:'次'},
+  {id:'zen',icon:'🧘',name:'清醒的人',line:'depth',desc:'冥想累積完成 30 次',prog:s=>Math.min(30,(s.catCounts&&s.catCounts['冥想'])||0),total:30,unit:'次'},
+  {id:'skill',icon:'🔧',name:'技能鍛造者',line:'depth',desc:'學習累積完成 30 次',prog:s=>Math.min(30,(s.catCounts&&s.catCounts['學習'])||0),total:30,unit:'次'},
+  {id:'perfect1',icon:'✅',name:'完美一天',line:'quality',desc:'單日完成所有習慣',prog:s=>Math.min(1,s.perfectDays||0),total:1,unit:'次'},
+  {id:'goodweek',icon:'🌤️',name:'很棒的一週',line:'quality',desc:'一週完成 60% 以上任務',prog:s=>Math.min(1,s.goodWeeks||0),total:1,unit:'次'},
+  {id:'perfect7',icon:'🏆',name:'完美一週',line:'quality',desc:'連續 7 天全部完成',prog:s=>Math.min(1,s.perfectWeeks||0),total:1,unit:'次'},
+  {id:'legend',icon:'✦',name:'複利人生家',line:'quality',desc:'達到 Lv.5 最高稱號',prog:s=>Math.min(5,s.level||1),total:5,unit:'級'},
+];
+const EMOJIS=['💧','🍎','😴','🚶','🧴','✏️','🎵','🎨','💻','🗣️','🌿','📝','😌','🙏','🌞','🏠','💰','👥','🌙','⏰'];
+
+let selEmoji=EMOJIS[0],selXP=10,calYear,calMonth;
+let db=null,auth=null,currentUser=null,firebaseReady=false;
+
+// 初始化 Firebase
+function initFirebase(){
+  try{
+    if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){
+      document.getElementById('firebase-setup-notice').style.display='block';
+      return;
+    }
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.firestore();
+    auth=firebase.auth();
+    firebaseReady=true;
+    auth.onAuthStateChanged(user=>{
+      currentUser=user;
+      if(user){
+        document.getElementById('sync-btn').textContent='已登入';
+        document.getElementById('sync-status').textContent='✓ 雲端同步中：'+user.email;
+        loadFromFirebase();
+      } else {
+        document.getElementById('sync-btn').textContent='登入同步';
+        document.getElementById('sync-status').textContent='';
+      }
+    });
+  } catch(e){
+    console.error('Firebase init error:',e);
+  }
+}
+
+function handleAuth(){
+  if(!firebaseReady){showToast('請先設定 Firebase');return;}
+  if(currentUser){
+    if(confirm('確定要登出嗎？')) auth.signOut();
+  } else {
+    const provider=new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(e=>showToast('登入失敗：'+e.message));
+  }
+}
+
+async function loadFromFirebase(){
+  if(!db||!currentUser) return;
+  try{
+    document.getElementById('loading-overlay').classList.add('show');
+    const doc=await db.collection('users').doc(currentUser.uid).get();
+    if(doc.exists){
+      const data=doc.data();
+      S={...defaultState(),...data};
+      render();showToast('資料已從雲端載入');
+    }
+  } catch(e){console.error(e);}
+  finally{document.getElementById('loading-overlay').classList.remove('show');}
+}
+
+async function saveToFirebase(){
+  if(!db||!currentUser) return;
+  try{
+    await db.collection('users').doc(currentUser.uid).set(S);
+  } catch(e){console.error('Firebase save error:',e);}
+}
+
+function defaultState(){
+  return {xp:0,level:1,streak:0,lastDate:null,firstDate:null,
+    totalDone:0,perfectDays:0,perfectWeeks:0,goodWeeks:0,
+    catCounts:{},earnedBadges:[],customHabits:[],todayDone:[],
+    weekData:{},tickets:0,ticketUsedDates:[],doneDates:[],dayLog:{},
+    motto:'',pinnedBadge:null};
+}
+
+let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
+if(!S.doneDates) S.doneDates=[];
+if(!S.dayLog) S.dayLog={};
+if(!S.ticketUsedDates) S.ticketUsedDates=[];
+
+function save(){
+  localStorage.setItem('slv8',JSON.stringify(S));
+  saveToFirebase();
+}
+
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`}
+function todayStr(){return new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'})}
+function weekKey(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`}
+function dKey(y,m,d){return `${y}-${m+1}-${d}`}
+function parseKey(k){const p=k.split('-');return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]))}
+
+function getRank(xp){let r=RANKS[0];for(const rk of RANKS)if(xp>=rk.xp)r=rk;return r}
+function getNext(lv){return RANKS.find(r=>r.lv===lv+1)}
+function allHabits(){return [...DEFAULT_HABITS,...(S.customHabits||[])]}
+function openModal(id){document.getElementById('modal-'+id).classList.add('show')}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('show')}
+function closeBg(e,id){if(e.target===document.getElementById('modal-'+id))closeModal(id)}
+
+function checkNewDay(){
+  const today=todayKey();
+  if(S.lastDate===today) return;
+  if(S.lastDate){
+    const prev=parseKey(S.lastDate);prev.setDate(prev.getDate()+1);
+    const prevKey=`${prev.getFullYear()}-${prev.getMonth()+1}-${prev.getDate()}`;
+    const prevDone=(S.dayLog&&S.dayLog[S.lastDate]||[]).length;
+    if(prevDone>=2&&prevKey===today) S.streak=(S.streak||0)+1;
+    else if(prevKey!==today) S.streak=0;
+    checkWeekStats();
+  } else {S.firstDate=today;S.streak=0;}
+  S.todayDone=[];S.lastDate=today;
+  checkTicketAccrual();save();
+}
+
+function checkWeekStats(){
+  const wk=weekKey();if(!S.weekData||!S.weekData[wk]) return;
+  const total=allHabits().length*7;
+  const done=Object.values(S.weekData[wk]).reduce((a,b)=>a+b,0);
+  if(done/total>=0.6) S.goodWeeks=(S.goodWeeks||0)+1;
+  if(done===total) S.perfectWeeks=(S.perfectWeeks||0)+1;
+}
+
+function checkTicketAccrual(){
+  if(!S.firstDate) return;
+  const days=Math.floor((new Date()-parseKey(S.firstDate))/86400000);
+  const avail=Math.min(3,Math.floor(days/14)-(S.ticketUsedDates||[]).length);
+  if(avail>S.tickets) S.tickets=avail;
+}
+
+function useTicket(){
+  if(S.tickets<=0) return;
+  const yd=new Date();yd.setDate(yd.getDate()-1);
+  const ydKey=`${yd.getFullYear()}-${yd.getMonth()+1}-${yd.getDate()}`;
+  if(!S.doneDates.includes(ydKey)) S.doneDates.push(ydKey);
+  S.streak=S.streak===0?1:S.streak+1;
+  S.tickets--;S.ticketUsedDates.push(todayKey());
+  showToast('補簽券已使用，昨天補回了！');save();render();
+}
+
+function toggleHabit(id){
+  checkNewDay();
+  const habit=allHabits().find(h=>h.id===id);if(!habit) return;
+  const prevRank=getRank(S.xp);
+  const wk=weekKey();
+  if(!S.weekData) S.weekData={};
+  if(!S.weekData[wk]) S.weekData[wk]={};
+  const tk=todayKey();
+  if(!S.dayLog) S.dayLog={};
+  if(!S.dayLog[tk]) S.dayLog[tk]=[];
+  if(!S.todayDone) S.todayDone=[];
+
+  if(S.todayDone.includes(id)){
+    S.todayDone=S.todayDone.filter(x=>x!==id);
+    S.xp=Math.max(0,S.xp-habit.xp);
+    S.totalDone=Math.max(0,(S.totalDone||0)-1);
+    if(!S.catCounts) S.catCounts={};
+    S.catCounts[habit.cat]=Math.max(0,(S.catCounts[habit.cat]||0)-1);
+    S.weekData[wk][id]=Math.max(0,(S.weekData[wk][id]||0)-1);
+    S.dayLog[tk]=S.dayLog[tk].filter(x=>x!==id);
+    if(S.todayDone.length<2) S.doneDates=S.doneDates.filter(x=>x!==tk);
+  } else {
+    S.todayDone.push(id);S.xp+=habit.xp;
+    S.totalDone=(S.totalDone||0)+1;
+    if(!S.catCounts) S.catCounts={};
+    S.catCounts[habit.cat]=(S.catCounts[habit.cat]||0)+1;
+    S.weekData[wk][id]=(S.weekData[wk][id]||0)+1;
+    if(!S.dayLog[tk].includes(id)) S.dayLog[tk].push(id);
+    if(S.todayDone.length>=2&&!S.doneDates.includes(tk)) S.doneDates.push(tk);
+    showToast(`+${habit.xp} XP — ${habit.name} 完成！`);
+    if(S.todayDone.length===allHabits().length){S.perfectDays=(S.perfectDays||0)+1;setTimeout(()=>showToast('✅ 完美一天！'),800);}
+    if(S.todayDone.length===2) setTimeout(()=>showToast('🔥 今天已達成連勝條件！'),600);
+  }
+  const newRank=getRank(S.xp);
+  if(newRank.lv>prevRank.lv){
+    document.getElementById('lu-ico').textContent=newRank.icon;
+    document.getElementById('lu-title').textContent=`升級！Lv.${newRank.lv}`;
+    document.getElementById('lu-desc').textContent=`稱號解鎖：${newRank.name}`;
+    openModal('lu');
+  }
+  checkBadges();save();render();
+}
+
+function checkBadges(){
+  BADGES.forEach(b=>{
+    if(!(S.earnedBadges||[]).includes(b.id)&&b.prog(S)>=b.total){
+      if(!S.earnedBadges) S.earnedBadges=[];
+      S.earnedBadges.push(b.id);
+      setTimeout(()=>showToast(`🎖️ 解鎖徽章：${b.name}`),400);
+    }
+  });
+}
+
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function selDiff(el){
+  selXP=parseInt(el.dataset.xp);
+  document.querySelectorAll('.diff-btn').forEach(d=>d.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function addHabit(){
+  const name=document.getElementById('c-name').value.trim();if(!name) return;
+  if(!S.customHabits) S.customHabits=[];
+  S.customHabits.push({id:'c_'+Date.now(),name,emoji:selEmoji,xp:selXP,cat:'自訂'});
+  document.getElementById('c-name').value='';
+  closeModal('add');showToast(`新增習慣：${name}`);checkBadges();save();render();
+}
+
+function pickEmoji(e){
+  selEmoji=e;
+  document.querySelectorAll('.emoji-opt').forEach(el=>el.classList.toggle('sel',el.dataset.e===e));
+}
+
+function openCal(){
+  const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
+  openModal('cal');renderCal();
+}
+function calPrev(){if(calMonth===0){calMonth=11;calYear--;}else calMonth--;renderCal();}
+function calNext(){
+  const now=new Date();
+  if(calYear<now.getFullYear()||(calYear===now.getFullYear()&&calMonth<now.getMonth())){
+    if(calMonth===11){calMonth=0;calYear++;}else calMonth++;renderCal();
+  }
+}
+
+function renderCal(){
+  const now=new Date();const todayK=todayKey();
+  document.getElementById('cal-month-label').textContent=
+    new Date(calYear,calMonth,1).toLocaleDateString('zh-TW',{year:'numeric',month:'long'});
+  const dows=['一','二','三','四','五','六','日'];
+  const firstDay=(new Date(calYear,calMonth,1).getDay()||7)-1;
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const k=dKey(calYear,calMonth,d);
+    const cellDate=new Date(calYear,calMonth,d);
+    const isToday=k===todayK;
+    const isPast=cellDate<=now;
+    const isDone=(S.doneDates||[]).includes(k);
+    const isMissed=isPast&&!isToday&&!isDone;
+    let cls='cal-day in-month';
+    if(isToday) cls+=' today';
+    if(isDone) cls+=' done';
+    else if(isMissed) cls+=' missed';
+    const oc=isDone?`onclick="showDayDetail('${k}')"`:'';
+    html+=`<div class="${cls}" ${oc}>${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  document.getElementById('day-detail-area').innerHTML='';
+  document.getElementById('cal-tip').textContent=
+    (S.tickets||0)>0?`你有 ${S.tickets} 張補簽券 — 點「其他功能 → 補簽券」使用`:'點綠色日期查看當天完成詳情';
+}
+
+function showDayDetail(k){
+  const log=(S.dayLog&&S.dayLog[k])||[];
+  const habits=allHabits();
+  const p=k.split('-');
+  const dateLabel=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2])).toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
+  let xpTotal=0;
+  let items=log.map(id=>{
+    const h=habits.find(x=>x.id===id);
+    if(h){xpTotal+=h.xp;return `<div class="day-detail-item"><span>${h.emoji}</span><span>${h.name}</span><span style="margin-left:auto;color:#3B6D11;font-size:11px">+${h.xp} XP</span></div>`;}
+    return '';
+  }).filter(Boolean).join('');
+  if(!items) items='<div class="day-detail-empty">無詳細記錄</div>';
+  document.getElementById('day-detail-area').innerHTML=`
+    <div class="day-detail">
+      <div class="day-detail-header">${dateLabel}</div>
+      ${items}
+      ${xpTotal>0?`<div class="day-detail-xp">當天累積：+${xpTotal} XP</div>`:''}
+    </div>`;
+}
+
+function pinBadge(id){
+  S.pinnedBadge=id;save();closeModal('badge-pin');render();showToast('目標徽章已設定！');
+}
+
+function renderEmojiGrid(){
+  document.getElementById('emoji-grid').innerHTML=EMOJIS.map(e=>
+    `<div class="emoji-opt${e===selEmoji?' sel':''}" data-e="${e}" onclick="pickEmoji('${e}')">${e}</div>`
+  ).join('');
+}
+
+function renderHabits(){
+  document.getElementById('habit-list').innerHTML=allHabits().map(h=>{
+    const done=(S.todayDone||[]).includes(h.id);
+    return `<div class="habit-row${done?' done':''}" onclick="toggleHabit('${h.id}')">
+      <div class="chk">${done?'✓':''}</div>
+      <div class="h-emoji">${h.emoji}</div>
+      <div style="flex:1"><div class="h-name">${h.name}</div><div class="h-xp">+<b>${h.xp} XP</b></div></div>
+    </div>`
+  }).join('');
+}
+
+function renderStats(){
+  const rank=getRank(S.xp||0);const next=getNext(rank.lv);
+  document.getElementById('r-icon').textContent=rank.icon;
+  document.getElementById('r-title').textContent=`Lv.${rank.lv} ${rank.name}`;
+  document.getElementById('rank-pill').textContent=rank.name;
+  document.getElementById('rank-tooltip').textContent=next?`距離 Lv.${next.lv} ${next.name} 還差 ${next.xp-(S.xp||0)} XP`:'已達最高等級 🎉';
+  document.getElementById('s-lv').textContent=rank.lv;
+  document.getElementById('s-xp').textContent=S.xp||0;
+  document.getElementById('s-streak').textContent=(S.streak||0)+' 🔥';
+  document.getElementById('s-done').textContent=(S.todayDone||[]).length+'/'+allHabits().length;
+  const cur=(S.xp||0)-rank.xp,need=next?next.xp-rank.xp:1;
+  const pct=next?Math.min(100,Math.round(cur/need*100)):100;
+  document.getElementById('xp-fill').style.width=pct+'%';
+  document.getElementById('xp-label').textContent=next?`${cur} / ${need} XP`:'MAX';
+  S.level=rank.lv;
+}
+
+function renderTickets(){
+  document.getElementById('ticket-dots').innerHTML=[0,1,2].map(i=>
+    `<div class="ticket-dot${i<(S.tickets||0)?' active':''}"></div>`).join('');
+  document.getElementById('use-ticket-btn').disabled=(S.tickets||0)<=0;
+  const nextIn=S.firstDate?14-Math.floor((new Date()-parseKey(S.firstDate))/86400000)%14:14;
+  document.getElementById('ticket-info').textContent=(S.tickets||0)>=3?'已達上限 3 張':`下次 +1：約 ${Math.max(1,nextIn)} 天後`;
+  document.getElementById('ticket-count-badge').textContent=S.tickets||0;
+}
+
+function renderPinnedBadge(){
+  const pb=BADGES.find(b=>b.id===S.pinnedBadge);
+  if(pb){
+    document.getElementById('pin-icon').textContent=pb.icon;
+    document.getElementById('pin-name').textContent=pb.name;
+    const cur=pb.prog(S);
+    document.getElementById('pin-sub').textContent=`${cur}/${pb.total} ${pb.unit}・${Math.round(cur/pb.total*100)}%`;
+  } else {
+    document.getElementById('pin-icon').textContent='🎯';
+    document.getElementById('pin-name').textContent='選擇目標';
+    document.getElementById('pin-sub').textContent='點此釘選';
+  }
+}
+
+function renderBadgeLines(){
+  document.getElementById('badge-lines').innerHTML=BADGE_LINES.map(line=>{
+    const badges=BADGES.filter(b=>b.line===line.id);
+    const earned=badges.filter(b=>(S.earnedBadges||[]).includes(b.id)).length;
+    const miniIcons=badges.map(b=>`<div class="badge-mini${(S.earnedBadges||[]).includes(b.id)?' earned':''}">${b.icon}</div>`).join('');
+    const popupItems=badges.map(b=>{
+      const cur=b.prog(S);const pct=Math.round(cur/b.total*100);const isE=(S.earnedBadges||[]).includes(b.id);
+      return `<div class="popup-badge-item${isE?' earned':''}" onclick="pinBadge('${b.id}');event.stopPropagation()">
+        <div class="popup-badge-icon">${b.icon}</div>
+        <div style="flex:1">
+          <div class="popup-badge-name">${b.name}</div>
+          <div class="popup-badge-desc">${b.desc}</div>
+          <div class="popup-badge-prog">${cur} / ${b.total} ${b.unit}（${pct}%）${isE?' ✓ 已達成':''}</div>
+        </div>
+      </div>`
+    }).join('');
+    return `<div class="badge-line-row">
+      <div style="flex:1">
+        <div class="badge-line-title">${line.name}</div>
+        <div class="badge-line-sub">${line.sub}・${earned}/${badges.length} 達成</div>
+      </div>
+      <div class="badge-line-icons">${miniIcons}</div>
+      <div class="badge-line-popup">
+        <div class="popup-badge-grid">${popupItems}</div>
+        <div class="pin-hint">點任一徽章可設為目標</div>
+      </div>
+    </div>`
+  }).join('');
+}
+
+function renderBadgePinList(){
+  document.getElementById('pin-badge-list').innerHTML=BADGES.map(b=>{
+    const earned=(S.earnedBadges||[]).includes(b.id);
+    const cur=b.prog(S);const pct=Math.round(cur/b.total*100);
+    const isPinned=S.pinnedBadge===b.id;
+    return `<div class="popup-badge-item${earned?' earned':''}" onclick="pinBadge('${b.id}')" style="${isPinned?'border:1.5px solid #378ADD;background:#E6F1FB':''}">
+      <div class="popup-badge-icon">${b.icon}</div>
+      <div style="flex:1">
+        <div class="popup-badge-name">${b.name}</div>
+        <div class="popup-badge-desc">${b.desc}</div>
+        <div class="popup-badge-prog">${cur} / ${b.total} ${b.unit}（${pct}%）</div>
+      </div>
+      ${isPinned?'<span style="font-size:11px;color:#378ADD">✓ 目標</span>':''}
+    </div>`
+  }).join('');
+}
+
+function render(){
+  renderStats();renderHabits();renderTickets();renderPinnedBadge();renderBadgeLines();
+}
+
+// 初始化
+document.getElementById('hdate').textContent=todayStr();
+document.getElementById('motto-input').value=S.motto||'';
+document.getElementById('motto-input').addEventListener('input',e=>{S.motto=e.target.value;save();});
+renderEmojiGrid();
+
+// badge pin modal 開啟時渲染
+document.getElementById('modal-badge-pin').addEventListener('click',function(e){
+  if(e.target===this) closeModal('badge-pin');
+});
+document.querySelector('[onclick="openModal(\'badge-pin\')"]') && document.querySelector('[onclick="openModal(\'badge-pin\')"]').addEventListener('click',renderBadgePinList);
+
+checkNewDay();render();
+initFirebase();
+</script>
+</body>
+</html>
