@@ -569,12 +569,9 @@ function loadFromFirebase(){
     doc=>{
       document.getElementById('loading-overlay').classList.remove('show');
       if(!doc.exists) return;
-      // metadata.hasPendingWrites = 這筆更新來自本機，略過避免覆蓋
       if(doc.metadata.hasPendingWrites) return;
       const data=doc.data();
-      const localAvatar=S.avatarUrl;
       S={...defaultState(),...data};
-      S.avatarUrl=localAvatar;
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
       if(!S.ticketUsedDates) S.ticketUsedDates=[];
@@ -598,7 +595,6 @@ async function saveToFirebase(){
   if(!db||!currentUser) return;
   try{
     const payload={...S};
-    delete payload.avatarUrl;
     await db.collection('users').doc(currentUser.uid).set(payload);
   }
   catch(e){
@@ -894,22 +890,34 @@ function onCropZoom(v){
 function confirmCrop(){
   const c=document.getElementById('crop-container');
   const cw=c.offsetWidth;
-  // 計算照片在容器中的顯示比例
   const displayW=cropEl.offsetWidth||cw;
   const scaleRatio=cropEl.naturalWidth/displayW;
-  // 換算圓圈在原始圖片上的座標
   const imgOffsetX=(cw-displayW)/2;
   const srcX=(circleX-circleR-imgOffsetX)*scaleRatio;
   const srcY=(circleY-circleR)*scaleRatio;
   const srcW=circleR*2*scaleRatio;
-  const size=300;
+  // 先畫到大 canvas 裁圓
+  const size=200;
   const canvas=document.createElement('canvas');
   canvas.width=size;canvas.height=size;
   const ctx=canvas.getContext('2d');
   ctx.beginPath();ctx.arc(size/2,size/2,size/2,0,Math.PI*2);ctx.clip();
   ctx.drawImage(cropEl,Math.max(0,srcX),Math.max(0,srcY),srcW,srcW,0,0,size,size);
-  S.avatarUrl=canvas.toDataURL('image/jpeg',0.92);
-  save();renderAvatar();closeModal('crop');showToast('頭像已更新！');
+  // 壓縮到小尺寸確保能存進 Firestore（< 900KB 限制）
+  const small=document.createElement('canvas');
+  small.width=80;small.height=80;
+  const sctx=small.getContext('2d');
+  sctx.beginPath();sctx.arc(40,40,40,0,Math.PI*2);sctx.clip();
+  sctx.drawImage(canvas,0,0,80,80);
+  const dataUrl=small.toDataURL('image/jpeg',0.7);
+  S.avatarUrl=dataUrl;
+  // 同步存到 Firebase
+  localStorage.setItem('slv8',JSON.stringify(S));
+  if(db&&currentUser){
+    db.collection('users').doc(currentUser.uid).update({avatarUrl:dataUrl})
+      .catch(()=>db.collection('users').doc(currentUser.uid).set({avatarUrl:dataUrl},{merge:true}));
+  }
+  renderAvatar();closeModal('crop');showToast('頭像已更新！');
 }
 
 // 圓圈拖曳 — 綁在 border 上
