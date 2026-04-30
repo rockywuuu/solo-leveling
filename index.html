@@ -480,7 +480,7 @@ const BADGES=[
 const EMOJIS=['💧','🍎','😴','🚶','🧴','✏️','🎵','🎨','💻','🗣️','🌿','📝','😌','🙏','🌞','🏠','💰','👥','🌙','⏰'];
 
 let selEmoji=EMOJIS[0],selXP=10,calYear,calMonth;
-let db=null,auth=null,currentUser=null,firebaseReady=false;
+let db=null,auth=null,currentUser=null,firebaseReady=false,isSaving=false;
 
 // ── Firebase ────────────────────────────────
 function initFirebase(){
@@ -525,33 +525,41 @@ async function loadFromFirebase(){
   if(!db||!currentUser) return;
   try{
     document.getElementById('loading-overlay').classList.add('show');
-    const doc=await db.collection('users').doc(currentUser.uid).get();
-    if(doc.exists){
-      const data=doc.data();
-      const localAvatar=S.avatarUrl;
-      S={...defaultState(),...data};
-      S.avatarUrl=localAvatar;
-      if(!S.doneDates) S.doneDates=[];
-      if(!S.dayLog) S.dayLog={};
-      if(!S.ticketUsedDates) S.ticketUsedDates=[];
-      localStorage.setItem('slv8',JSON.stringify(S));
-      render();renderAvatar();
-      document.getElementById('username-input').value=S.username||'';
-      document.getElementById('motto-input').value=S.motto||'';
-      showToast('✓ 雲端資料已載入');
-    }
-  } catch(e){console.error(e);showToast('載入失敗，請檢查網路');}
-  finally{document.getElementById('loading-overlay').classList.remove('show');}
+    // 改用即時監聽，任何裝置更新都會自動同步
+    db.collection('users').doc(currentUser.uid).onSnapshot(doc=>{
+      document.getElementById('loading-overlay').classList.remove('show');
+      if(isSaving) return;
+      if(doc.exists){
+        const data=doc.data();
+        const localAvatar=S.avatarUrl;
+        S={...defaultState(),...data};
+        S.avatarUrl=localAvatar;
+        if(!S.doneDates) S.doneDates=[];
+        if(!S.dayLog) S.dayLog={};
+        if(!S.ticketUsedDates) S.ticketUsedDates=[];
+        localStorage.setItem('slv8',JSON.stringify(S));
+        render();renderAvatar();
+        document.getElementById('username-input').value=S.username||'';
+        document.getElementById('motto-input').value=S.motto||'';
+      }
+    });
+  } catch(e){
+    console.error(e);
+    document.getElementById('loading-overlay').classList.remove('show');
+    showToast('載入失敗，請檢查網路');
+  }
 }
 
 async function saveToFirebase(){
   if(!db||!currentUser) return;
   try{
+    isSaving=true;
     const payload={...S};
     delete payload.avatarUrl;
     await db.collection('users').doc(currentUser.uid).set(payload);
   }
   catch(e){console.error('Firebase save error:',e);}
+  finally{setTimeout(()=>{isSaving=false;},1000);}
 }
 
 // ── State ────────────────────────────────────
