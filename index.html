@@ -569,8 +569,9 @@ function loadFromFirebase(){
     doc=>{
       document.getElementById('loading-overlay').classList.remove('show');
       if(!doc.exists) return;
-      if(doc.metadata.hasPendingWrites) return;
       const data=doc.data();
+      // 如果是自己剛存的（非頭像更新），用本機資料避免閃爍
+      if(doc.metadata.hasPendingWrites && !data.avatarUrl) return;
       S={...defaultState(),...data};
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
@@ -896,28 +897,20 @@ function confirmCrop(){
   const srcX=(circleX-circleR-imgOffsetX)*scaleRatio;
   const srcY=(circleY-circleR)*scaleRatio;
   const srcW=circleR*2*scaleRatio;
-  // 先畫到大 canvas 裁圓
   const size=200;
   const canvas=document.createElement('canvas');
   canvas.width=size;canvas.height=size;
   const ctx=canvas.getContext('2d');
   ctx.beginPath();ctx.arc(size/2,size/2,size/2,0,Math.PI*2);ctx.clip();
   ctx.drawImage(cropEl,Math.max(0,srcX),Math.max(0,srcY),srcW,srcW,0,0,size,size);
-  // 壓縮到小尺寸確保能存進 Firestore（< 900KB 限制）
   const small=document.createElement('canvas');
-  small.width=80;small.height=80;
+  small.width=100;small.height=100;
   const sctx=small.getContext('2d');
-  sctx.beginPath();sctx.arc(40,40,40,0,Math.PI*2);sctx.clip();
-  sctx.drawImage(canvas,0,0,80,80);
-  const dataUrl=small.toDataURL('image/jpeg',0.7);
-  S.avatarUrl=dataUrl;
-  // 同步存到 Firebase
-  localStorage.setItem('slv8',JSON.stringify(S));
-  if(db&&currentUser){
-    db.collection('users').doc(currentUser.uid).update({avatarUrl:dataUrl})
-      .catch(()=>db.collection('users').doc(currentUser.uid).set({avatarUrl:dataUrl},{merge:true}));
-  }
-  renderAvatar();closeModal('crop');showToast('頭像已更新！');
+  sctx.beginPath();sctx.arc(50,50,50,0,Math.PI*2);sctx.clip();
+  sctx.drawImage(canvas,0,0,100,100);
+  S.avatarUrl=small.toDataURL('image/jpeg',0.75);
+  save();
+  renderAvatar();closeModal('crop');showToast('頭像已更新並同步！');
 }
 
 // 圓圈拖曳 — 綁在 border 上
