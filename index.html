@@ -79,7 +79,14 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 .stat-n{font-size:clamp(16px,2.5vw,19px);font-weight:500;color:#0C447C}
 .stat-l{font-size:clamp(10px,1.4vw,11px);color:#378ADD;margin-top:2px}
 .streak-n{color:#BA7517}
-.sec-label{font-size:clamp(10px,1.4vw,11px);font-weight:500;color:#185FA5;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;margin-top:1.25rem}
+.sec-label{font-size:clamp(10px,1.4vw,11px);font-weight:500;color:#185FA5;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;margin-top:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.edit-habits-btn{font-size:11px;background:transparent;border:0.5px solid #B5D4F4;border-radius:7px;padding:2px 8px;color:#378ADD;cursor:pointer;font-weight:400;letter-spacing:0;text-transform:none}
+.edit-habits-btn:hover{background:#E6F1FB}
+.eh-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid #EAF3FB}
+.eh-row:last-child{border-bottom:none}
+.eh-emoji{width:36px;font-size:18px;text-align:center;border:0.5px solid #B5D4F4;border-radius:7px;padding:4px;background:white}
+.eh-name{flex:1;border:0.5px solid #B5D4F4;border-radius:7px;padding:5px 8px;font-size:13px;color:#0C447C;background:white}
+.eh-xp{border:0.5px solid #B5D4F4;border-radius:7px;padding:5px 6px;font-size:12px;color:#185FA5;background:white;width:72px}
 
 /* habits */
 .habit-list{display:flex;flex-direction:column;gap:6px}
@@ -289,7 +296,7 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
     <div class="stat"><div class="stat-n" id="s-done">0/4</div><div class="stat-l">今日完成</div></div>
   </div>
 
-  <div class="sec-label">今日任務</div>
+  <div class="sec-label">今日任務<button class="edit-habits-btn" onclick="openEditHabits()">✏️ 編輯</button></div>
   <div class="habit-list" id="habit-list"></div>
 
   <div class="sec-label">其他功能</div>
@@ -303,6 +310,20 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 
   <div><div class="toast" id="toast"></div></div>
 </div>
+</div>
+
+<!-- Edit Default Habits Modal -->
+<div class="modal-bg" id="modal-edit-habits" onclick="closeBg(event,'edit-habits')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>編輯今日任務</h3>
+      <button class="modal-close" onclick="closeModal('edit-habits')">✕</button>
+    </div>
+    <div id="edit-habits-list"></div>
+    <button class="modal-submit" style="margin-top:12px" onclick="saveEditHabits()">儲存</button>
+    <button class="modal-submit" style="margin-top:6px;background:#F0F6FD;color:#378ADD" onclick="resetDefaultHabits()">恢復預設</button>
+  </div>
 </div>
 
 <!-- Add Habit Modal -->
@@ -365,7 +386,7 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
       <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#F0F6FD;border:0.5px solid #B5D4F4"></div>未完成</div>
     </div>
     <div id="day-detail-area"></div>
-    <div class="cal-tip" id="cal-tip">點綠色日期查看當天完成詳情</div>
+    <div class="cal-tip" id="cal-tip">點日期查看當天完成詳情</div>
   </div>
 </div>
 
@@ -576,6 +597,7 @@ function loadFromFirebase(){
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
       if(!S.ticketUsedDates) S.ticketUsedDates=[];
+      checkNewDay();
       localStorage.setItem('slv8',JSON.stringify(S));
       render();renderAvatar();
       document.getElementById('username-input').value=S.username||'';
@@ -610,7 +632,7 @@ function defaultState(){
     totalDone:0,perfectDays:0,perfectWeeks:0,goodWeeks:0,
     catCounts:{},earnedBadges:[],customHabits:[],todayDone:[],
     weekData:{},tickets:0,ticketUsedDates:[],doneDates:[],dayLog:{},
-    motto:'',pinnedBadge:null,avatarUrl:null,username:''};
+    motto:'',pinnedBadge:null,avatarUrl:null,username:'',defaultHabitsOverride:null};
 }
 
 let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
@@ -631,7 +653,10 @@ function dKey(y,m,d){return `${y}-${m+1}-${d}`}
 function parseKey(k){const p=k.split('-');return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]))}
 function getRank(xp){let r=RANKS[0];for(const rk of RANKS)if(xp>=rk.xp)r=rk;return r}
 function getNext(lv){return RANKS.find(r=>r.lv===lv+1)}
-function allHabits(){return [...DEFAULT_HABITS,...(S.customHabits||[])]}
+function allHabits(){
+  const defaults=(S.defaultHabitsOverride&&S.defaultHabitsOverride.length===4)?S.defaultHabitsOverride:DEFAULT_HABITS;
+  return [...defaults,...(S.customHabits||[])];
+}
 function openModal(id){document.getElementById('modal-'+id).classList.add('show')}
 function closeModal(id){document.getElementById('modal-'+id).classList.remove('show')}
 function closeBg(e,id){if(e.target===document.getElementById('modal-'+id))closeModal(id)}
@@ -760,6 +785,39 @@ function pickEmoji(e){
 }
 
 // ── Calendar ─────────────────────────────────
+function openEditHabits(){
+  const habits=(S.defaultHabitsOverride&&S.defaultHabitsOverride.length===4)?S.defaultHabitsOverride:DEFAULT_HABITS;
+  document.getElementById('edit-habits-list').innerHTML=habits.map((h,i)=>`
+    <div class="eh-row">
+      <input class="eh-emoji" id="eh-e-${i}" value="${h.emoji}" maxlength="2" title="圖示">
+      <input class="eh-name" id="eh-n-${i}" value="${h.name}" maxlength="16" placeholder="習慣名稱">
+      <select class="eh-xp" id="eh-x-${i}">
+        <option value="10"${h.xp===10?' selected':''}>+10 XP</option>
+        <option value="15"${h.xp===15?' selected':''}>+15 XP</option>
+        <option value="20"${h.xp===20?' selected':''}>+20 XP</option>
+        <option value="25"${h.xp===25?' selected':''}>+25 XP</option>
+      </select>
+    </div>`).join('');
+  openModal('edit-habits');
+}
+
+function saveEditHabits(){
+  const base=(S.defaultHabitsOverride&&S.defaultHabitsOverride.length===4)?S.defaultHabitsOverride:DEFAULT_HABITS;
+  S.defaultHabitsOverride=base.map((h,i)=>({
+    ...h,
+    emoji:document.getElementById(`eh-e-${i}`).value.trim()||h.emoji,
+    name:document.getElementById(`eh-n-${i}`).value.trim()||h.name,
+    xp:parseInt(document.getElementById(`eh-x-${i}`).value)
+  }));
+  save();closeModal('edit-habits');render();showToast('今日任務已更新 ✓');
+}
+
+function resetDefaultHabits(){
+  if(!confirm('確定要恢復為預設習慣嗎？')) return;
+  S.defaultHabitsOverride=null;
+  save();closeModal('edit-habits');render();showToast('已恢復預設習慣');
+}
+
 function openCal(){
   const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
   openModal('cal');renderCal();
@@ -792,13 +850,14 @@ function renderCal(){
     if(isToday) cls+=' today';
     if(isDone) cls+=' done';
     else if(isMissed) cls+=' missed';
-    const oc=isDone?`onclick="showDayDetail('${k}')"`:'';
+    const clickable=isDone||isMissed;
+    const oc=clickable?`onclick="showDayDetail('${k}')" style="cursor:pointer"`:'';
     html+=`<div class="${cls}" ${oc}>${d}</div>`;
   }
   document.getElementById('cal-grid').innerHTML=html;
   document.getElementById('day-detail-area').innerHTML='';
   document.getElementById('cal-tip').textContent=
-    (S.tickets||0)>0?`你有 ${S.tickets} 張補簽券 — 點「其他功能 → 補簽券」使用`:'點綠色日期查看當天完成詳情';
+    (S.tickets||0)>0?`你有 ${S.tickets} 張補簽券 — 點「其他功能 → 補簽券」使用`:'點日期查看當天紀錄';
 }
 
 function showDayDetail(k){
