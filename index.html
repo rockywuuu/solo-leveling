@@ -861,7 +861,7 @@ function _renderEditList(){
         </select>
         <button class="eh-del" onclick="delEditHabit(${i})" title="移除">✕</button>
       </div>`).join('')+
-    (_editHabits.length<8?`<button class="eh-add-btn" onclick="addEditHabit()">＋ 新增習慣</button>`:'');
+    '';
 }
 function openEditHabits(){
   _editHabits=(S.defaultHabitsOverride&&S.defaultHabitsOverride.length>0)
