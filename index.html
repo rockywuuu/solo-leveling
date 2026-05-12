@@ -78,6 +78,7 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 .stat.clickable:hover{border-color:#85B7EB}
 .stat-n{font-size:clamp(16px,2.5vw,19px);font-weight:500;color:#0C447C}
 .stat-l{font-size:clamp(10px,1.4vw,11px);color:#378ADD;margin-top:2px}
+.stat-best{font-size:10px;color:#85B7EB;margin-top:2px}
 .streak-n{color:#BA7517}
 .sec-label{font-size:clamp(10px,1.4vw,11px);font-weight:500;color:#185FA5;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;margin-top:1.25rem;display:flex;align-items:center;justify-content:space-between}
 .edit-habits-btn{font-size:11px;background:transparent;border:0.5px solid #B5D4F4;border-radius:7px;padding:2px 8px;color:#378ADD;cursor:pointer;font-weight:400;letter-spacing:0;text-transform:none}
@@ -291,7 +292,9 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
     <div class="stat"><div class="stat-n" id="s-lv">1</div><div class="stat-l">等級</div></div>
     <div class="stat"><div class="stat-n" id="s-xp">0</div><div class="stat-l">總 XP</div></div>
     <div class="stat clickable" onclick="openCal()">
-      <div class="stat-n streak-n" id="s-streak">0 🔥</div><div class="stat-l">連續天數 ↗</div>
+      <div class="stat-n streak-n" id="s-streak">0 🔥</div>
+      <div class="stat-l">連續天數 ↗</div>
+      <div class="stat-best" id="s-best-streak">最佳 0 天</div>
     </div>
     <div class="stat"><div class="stat-n" id="s-done">0/4</div><div class="stat-l">今日完成</div></div>
   </div>
@@ -374,6 +377,16 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
     <div class="modal-header">
       <h3>連續天數記錄</h3>
       <button class="modal-close" onclick="closeModal('cal')">✕</button>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px">
+      <div style="flex:1;background:#F0F6FD;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:600;color:#0C447C" id="cal-cur-streak">0 🔥</div>
+        <div style="font-size:11px;color:#378ADD;margin-top:2px">目前連勝</div>
+      </div>
+      <div style="flex:1;background:#EAF3DE;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:600;color:#3B6D11" id="cal-best-streak">0 🏆</div>
+        <div style="font-size:11px;color:#5A9A1F;margin-top:2px">歷史最佳</div>
+      </div>
     </div>
     <div class="cal-nav">
       <button onclick="calPrev()">‹ 上個月</button>
@@ -632,13 +645,14 @@ function defaultState(){
     totalDone:0,perfectDays:0,perfectWeeks:0,goodWeeks:0,
     catCounts:{},earnedBadges:[],customHabits:[],todayDone:[],
     weekData:{},tickets:0,ticketUsedDates:[],doneDates:[],dayLog:{},
-    motto:'',pinnedBadge:null,avatarUrl:null,username:'',defaultHabitsOverride:null};
+    motto:'',pinnedBadge:null,avatarUrl:null,username:'',defaultHabitsOverride:null,bestStreak:0};
 }
 
 let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
 if(!S.doneDates) S.doneDates=[];
 if(!S.dayLog) S.dayLog={};
 if(!S.ticketUsedDates) S.ticketUsedDates=[];
+if(!S.bestStreak) S.bestStreak=S.streak||0;
 
 function save(){
   localStorage.setItem('slv8',JSON.stringify(S));
@@ -669,7 +683,7 @@ function checkNewDay(){
     const prev=parseKey(S.lastDate);prev.setDate(prev.getDate()+1);
     const prevKey=`${prev.getFullYear()}-${prev.getMonth()+1}-${prev.getDate()}`;
     const prevDone=(S.dayLog&&S.dayLog[S.lastDate]||[]).length;
-    if(prevDone>=2&&prevKey===today) S.streak=(S.streak||0)+1;
+    if(prevDone>=2&&prevKey===today){S.streak=(S.streak||0)+1;if(S.streak>(S.bestStreak||0))S.bestStreak=S.streak;}
     else if(prevKey!==today) S.streak=0;
     checkWeekStats();
   } else {S.firstDate=today;S.streak=0;}
@@ -698,6 +712,7 @@ function useTicket(){
   const ydKey=`${yd.getFullYear()}-${yd.getMonth()+1}-${yd.getDate()}`;
   if(!S.doneDates.includes(ydKey)) S.doneDates.push(ydKey);
   S.streak=S.streak===0?1:S.streak+1;
+  if(S.streak>(S.bestStreak||0)) S.bestStreak=S.streak;
   S.tickets--;S.ticketUsedDates.push(todayKey());
   showToast('補簽券已使用，昨天補回了！');save();render();
 }
@@ -821,6 +836,8 @@ function resetDefaultHabits(){
 function openCal(){
   const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
   openModal('cal');renderCal();
+  document.getElementById('cal-cur-streak').textContent=(S.streak||0)+' 🔥';
+  document.getElementById('cal-best-streak').textContent=(S.bestStreak||0)+' 🏆';
 }
 function calPrev(){if(calMonth===0){calMonth=11;calYear--;}else calMonth--;renderCal();}
 function calNext(){
@@ -1088,6 +1105,7 @@ function renderStats(){
   document.getElementById('s-lv').textContent=rank.lv;
   document.getElementById('s-xp').textContent=S.xp||0;
   document.getElementById('s-streak').textContent=(S.streak||0)+' 🔥';
+  document.getElementById('s-best-streak').textContent='最佳 '+(S.bestStreak||0)+' 天';
   document.getElementById('s-done').textContent=(S.todayDone||[]).length+'/'+allHabits().length;
   const cur=(S.xp||0)-rank.xp,need=next?next.xp-rank.xp:1;
   const pct=next?Math.min(100,Math.round(cur/need*100)):100;
