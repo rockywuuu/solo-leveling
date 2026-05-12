@@ -652,7 +652,22 @@ let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
 if(!S.doneDates) S.doneDates=[];
 if(!S.dayLog) S.dayLog={};
 if(!S.ticketUsedDates) S.ticketUsedDates=[];
-if(!S.bestStreak) S.bestStreak=S.streak||0;
+if(!S.bestStreak){
+  // 從 doneDates 掃描歷史最長連勝
+  const dates=[...(S.doneDates||[])].sort();
+  let best=0,cur=0;
+  for(let i=0;i<dates.length;i++){
+    if(i===0){cur=1;}
+    else{
+      const prev=new Date(dates[i-1].replace(/(\d+)-(\d+)-(\d+)/,'$1/$2/$3'));
+      prev.setDate(prev.getDate()+1);
+      const prevNext=`${prev.getFullYear()}-${prev.getMonth()+1}-${prev.getDate()}`;
+      cur=(prevNext===dates[i])?cur+1:1;
+    }
+    if(cur>best) best=cur;
+  }
+  S.bestStreak=Math.max(best,S.streak||0);
+}
 
 function save(){
   localStorage.setItem('slv8',JSON.stringify(S));
