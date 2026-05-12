@@ -92,14 +92,15 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
 .eh-del:hover{color:#E85C5C}
 .eh-add-btn{width:100%;margin-top:10px;padding:9px;border:1px dashed #B5D4F4;border-radius:8px;background:transparent;color:#378ADD;cursor:pointer;font-size:13px}
 .eh-add-btn:hover{background:#E6F1FB}
-.week-chart{display:flex;gap:5px;align-items:flex-end;height:72px;margin-bottom:14px;padding:0 2px}
-.wc-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
+.week-chart{display:flex;gap:5px;align-items:flex-end;height:88px;margin-bottom:14px;padding:0 2px}
+.wc-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:100%}
 .wc-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end}
 .wc-bar{width:100%;border-radius:4px 4px 0 0;background:#DCE9F8;min-height:2px;transition:height 0.3s}
 .wc-bar.done{background:#378ADD}
 .wc-bar.perfect{background:#0C447C}
 .wc-bar.today{outline:2px solid #0C447C;outline-offset:1px}
-.wc-label{font-size:10px;color:#85B7EB}
+.wc-label{font-size:10px;color:#85B7EB;line-height:1.2}
+.wc-date{font-size:9px;color:#B5D4F4;line-height:1.2}
 .wc-count{font-size:10px;color:#378ADD;font-weight:500;min-height:14px}
 
 /* habits */
@@ -312,14 +313,13 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
     <div class="stat"><div class="stat-n" id="s-done">0/4</div><div class="stat-l">今日完成</div></div>
   </div>
 
-  <div class="sec-label">今日任務<button class="edit-habits-btn" onclick="openEditHabits()">✏️ 編輯</button></div>
-  <div class="habit-list" id="habit-list"></div>
-
-  <div class="sec-label">其他功能</div>
-  <div class="tools-row">
-    <button class="tool-btn" onclick="openModal('add')">＋ 新增習慣</button>
-    <button class="tool-btn" onclick="openModal('ticket')">🎫 補簽券 <span id="ticket-count-badge" style="background:#E6F1FB;color:#185FA5;border-radius:999px;padding:1px 7px;font-size:11px">0</span></button>
+  <div class="sec-label">今日任務
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="edit-habits-btn" onclick="openModal('ticket')">🎫 <span id="ticket-count-badge">0</span></button>
+      <button class="edit-habits-btn" onclick="openEditHabits()">✏️ 編輯</button>
+    </div>
   </div>
+  <div class="habit-list" id="habit-list"></div>
 
   <div class="sec-label">成就徽章</div>
   <div class="badge-lines" id="badge-lines"></div>
@@ -338,6 +338,7 @@ html,body{font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto San
     </div>
     <div id="edit-habits-list"></div>
     <button class="modal-submit" style="margin-top:12px" onclick="saveEditHabits()">儲存</button>
+    <button class="modal-submit" style="margin-top:6px;background:#EAF3DE;color:#3B6D11" onclick="closeModal('edit-habits');openModal('add')">＋ 新增自訂習慣</button>
     <button class="modal-submit" style="margin-top:6px;background:#F0F6FD;color:#378ADD" onclick="resetDefaultHabits()">恢復預設</button>
   </div>
 </div>
@@ -900,18 +901,18 @@ function renderWeekChart(){
     const d=new Date();d.setDate(d.getDate()-i);
     const k=`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
     const done=(S.dayLog&&S.dayLog[k])?S.dayLog[k].length:0;
-    days.push({k,done,dow:dows[d.getDay()],isToday:i===0});
+    days.push({k,done,dow:dows[d.getDay()],date:`${d.getMonth()+1}/${d.getDate()}`,isToday:i===0});
   }
   const maxDone=Math.max(...days.map(d=>d.done),1);
   document.getElementById('week-chart').innerHTML=days.map(d=>{
     const barH=Math.max(3,Math.round(d.done/maxDone*100));
-    const cls=d.done===0?'':(d.done>=total?'perfect':'done')+(d.isToday?' today':d.isToday?'':''+(d.isToday?' today':''));
-    const isDone=d.done>=total;const isToday=d.isToday;
-    const barCls=(isDone?'perfect':'done')+(isToday?' today':'');
+    const isDone=d.done>=total;
+    const barCls=(isDone?'perfect':'done')+(d.isToday?' today':'');
     return `<div class="wc-col">
       <div class="wc-count">${d.done>0?d.done+'/'+total:''}</div>
       <div class="wc-bar-wrap"><div class="wc-bar${d.done>0?' '+barCls:''}" style="height:${d.done>0?barH:3}%"></div></div>
       <div class="wc-label">${d.dow}</div>
+      <div class="wc-date">${d.date}</div>
     </div>`;
   }).join('');
 }
@@ -956,7 +957,7 @@ function renderCal(){
   document.getElementById('cal-grid').innerHTML=html;
   document.getElementById('day-detail-area').innerHTML='';
   document.getElementById('cal-tip').textContent=
-    (S.tickets||0)>0?`你有 ${S.tickets} 張補簽券 — 點「其他功能 → 補簽券」使用`:'點日期查看當天紀錄';
+    (S.tickets||0)>0?`你有 ${S.tickets} 張補簽券 — 點習慣旁的 🎫 使用`:'點日期查看當天紀錄';
 }
 
 function showDayDetail(k){
