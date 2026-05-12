@@ -610,7 +610,9 @@ function loadFromFirebase(){
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
       if(!S.ticketUsedDates) S.ticketUsedDates=[];
-      checkNewDay();
+      if(!S.bestStreak) S.bestStreak=S.streak||0;
+      // 午夜重置：只清 todayDone，不動 streak（避免 checkNewDay 的副作用）
+      if(S.lastDate && S.lastDate!==todayKey()) S.todayDone=[];
       localStorage.setItem('slv8',JSON.stringify(S));
       render();renderAvatar();
       document.getElementById('username-input').value=S.username||'';
