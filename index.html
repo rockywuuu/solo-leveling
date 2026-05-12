@@ -610,8 +610,12 @@ function loadFromFirebase(){
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
       if(!S.ticketUsedDates) S.ticketUsedDates=[];
-      if(!S.bestStreak) S.bestStreak=S.streak||0;
-      // 午夜重置：只清 todayDone，不動 streak（避免 checkNewDay 的副作用）
+      // bestStreak：若雲端沒有，從 doneDates 計算並存回 Firebase
+      if(!S.bestStreak){
+        S.bestStreak=calcBestStreak(S);
+        saveToFirebase();
+      }
+      // 午夜重置：只清 todayDone，不動 streak
       if(S.lastDate && S.lastDate!==todayKey()) S.todayDone=[];
       localStorage.setItem('slv8',JSON.stringify(S));
       render();renderAvatar();
@@ -650,26 +654,27 @@ function defaultState(){
     motto:'',pinnedBadge:null,avatarUrl:null,username:'',defaultHabitsOverride:null,bestStreak:0};
 }
 
-let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
-if(!S.doneDates) S.doneDates=[];
-if(!S.dayLog) S.dayLog={};
-if(!S.ticketUsedDates) S.ticketUsedDates=[];
-if(!S.bestStreak){
-  // 從 doneDates 掃描歷史最長連勝
-  const dates=[...(S.doneDates||[])].sort();
+function calcBestStreak(state){
+  const dates=[...(state.doneDates||[])].sort();
   let best=0,cur=0;
   for(let i=0;i<dates.length;i++){
     if(i===0){cur=1;}
     else{
       const prev=new Date(dates[i-1].replace(/(\d+)-(\d+)-(\d+)/,'$1/$2/$3'));
       prev.setDate(prev.getDate()+1);
-      const prevNext=`${prev.getFullYear()}-${prev.getMonth()+1}-${prev.getDate()}`;
-      cur=(prevNext===dates[i])?cur+1:1;
+      const nxt=`${prev.getFullYear()}-${prev.getMonth()+1}-${prev.getDate()}`;
+      cur=(nxt===dates[i])?cur+1:1;
     }
     if(cur>best) best=cur;
   }
-  S.bestStreak=Math.max(best,S.streak||0);
+  return Math.max(best,state.streak||0);
 }
+
+let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
+if(!S.doneDates) S.doneDates=[];
+if(!S.dayLog) S.dayLog={};
+if(!S.ticketUsedDates) S.ticketUsedDates=[];
+if(!S.bestStreak) S.bestStreak=calcBestStreak(S);
 
 function save(){
   localStorage.setItem('slv8',JSON.stringify(S));
