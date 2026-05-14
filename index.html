@@ -620,7 +620,7 @@ function loadFromFirebase(){
       if(!doc.exists) return;
       const data=doc.data();
       // 如果是自己剛存的（非頭像更新），用本機資料避免閃爍
-      if(doc.metadata.hasPendingWrites && !data.avatarUrl) return;
+      if(doc.metadata.hasPendingWrites) return;
       S={...defaultState(),...data};
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
@@ -734,7 +734,7 @@ function checkNewDay(){
     const prevKey=`${prev.getFullYear()}-${prev.getMonth()+1}-${prev.getDate()}`;
     const prevDone=(S.dayLog&&S.dayLog[S.lastDate]||[]).length;
     if(prevDone>=2&&prevKey===today){S.streak=(S.streak||0)+1;if(S.streak>(S.bestStreak||0))S.bestStreak=S.streak;}
-    else if(prevKey!==today) S.streak=0;
+    else if(prevKey!==today||prevDone<2) S.streak=0;
     checkWeekStats();
   } else {S.firstDate=today;S.streak=0;}
   S.todayDone=[];S.lastDate=today;
