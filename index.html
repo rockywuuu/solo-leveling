@@ -625,12 +625,15 @@ function loadFromFirebase(){
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
       if(!S.ticketUsedDates) S.ticketUsedDates=[];
+      // Backfill doneDates from dayLog (for historical dates before doneDates was added)
+      let _needSave=false;
+      Object.keys(S.dayLog).forEach(k=>{
+        if((S.dayLog[k]||[]).length>=2&&!S.doneDates.includes(k)){S.doneDates.push(k);_needSave=true;}
+      });
       // bestStreak：從 dayLog+doneDates 重算，若比雲端高則更新存回 Firebase
       const _computed=calcBestStreak(S);
-      if(_computed>(S.bestStreak||0)){
-        S.bestStreak=_computed;
-        saveToFirebase();
-      }
+      if(_computed>(S.bestStreak||0)){S.bestStreak=_computed;_needSave=true;}
+      if(_needSave) saveToFirebase();
       // 午夜重置：只清 todayDone，不動 streak
       if(S.lastDate && S.lastDate!==todayKey()) S.todayDone=[];
       localStorage.setItem('slv8',JSON.stringify(S));
@@ -698,6 +701,7 @@ let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
 if(!S.doneDates) S.doneDates=[];
 if(!S.dayLog) S.dayLog={};
 if(!S.ticketUsedDates) S.ticketUsedDates=[];
+Object.keys(S.dayLog).forEach(k=>{if((S.dayLog[k]||[]).length>=2&&!S.doneDates.includes(k))S.doneDates.push(k);});
 const _ls=calcBestStreak(S);if(_ls>(S.bestStreak||0)) S.bestStreak=_ls;
 
 function save(){
@@ -953,7 +957,7 @@ function renderCal(){
     const cellDate=new Date(calYear,calMonth,d);
     const isToday=k===todayK;
     const isPast=cellDate<=now;
-    const isDone=(S.doneDates||[]).includes(k);
+    const isDone=(S.doneDates||[]).includes(k)||((S.dayLog&&S.dayLog[k]||[]).length>=2);
     const isMissed=isPast&&!isToday&&!isDone;
     let cls='cal-day in-month';
     if(isToday) cls+=' today';
