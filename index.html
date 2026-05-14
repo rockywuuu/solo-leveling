@@ -625,9 +625,10 @@ function loadFromFirebase(){
       if(!S.doneDates) S.doneDates=[];
       if(!S.dayLog) S.dayLog={};
       if(!S.ticketUsedDates) S.ticketUsedDates=[];
-      // bestStreak：若雲端沒有，從 doneDates 計算並存回 Firebase
-      if(!S.bestStreak){
-        S.bestStreak=calcBestStreak(S);
+      // bestStreak：從 dayLog+doneDates 重算，若比雲端高則更新存回 Firebase
+      const _computed=calcBestStreak(S);
+      if(_computed>(S.bestStreak||0)){
+        S.bestStreak=_computed;
         saveToFirebase();
       }
       // 午夜重置：只清 todayDone，不動 streak
@@ -670,15 +671,23 @@ function defaultState(){
 }
 
 function calcBestStreak(state){
-  const dates=[...(state.doneDates||[])].sort();
+  // Use dayLog (complete history) + doneDates merged, to recover all historical streaks
+  const logDates=Object.keys(state.dayLog||{}).filter(k=>(state.dayLog[k]||[]).length>=2);
+  const allDates=[...new Set([...logDates,...(state.doneDates||[])])];
+  // Numeric sort to handle non-zero-padded dates correctly (e.g. "2026-9-1" vs "2026-10-1")
+  allDates.sort((a,b)=>{
+    const [ay,am,ad]=a.split('-').map(Number);
+    const [by,bm,bd]=b.split('-').map(Number);
+    return new Date(ay,am-1,ad)-new Date(by,bm-1,bd);
+  });
   let best=0,cur=0;
-  for(let i=0;i<dates.length;i++){
+  for(let i=0;i<allDates.length;i++){
     if(i===0){cur=1;}
     else{
-      const prev=new Date(dates[i-1].replace(/(\d+)-(\d+)-(\d+)/,'$1/$2/$3'));
-      prev.setDate(prev.getDate()+1);
+      const [py,pm,pd]=allDates[i-1].split('-').map(Number);
+      const prev=new Date(py,pm-1,pd);prev.setDate(prev.getDate()+1);
       const nxt=`${prev.getFullYear()}-${prev.getMonth()+1}-${prev.getDate()}`;
-      cur=(nxt===dates[i])?cur+1:1;
+      cur=(nxt===allDates[i])?cur+1:1;
     }
     if(cur>best) best=cur;
   }
@@ -689,7 +698,7 @@ let S=JSON.parse(localStorage.getItem('slv8')||'null')||defaultState();
 if(!S.doneDates) S.doneDates=[];
 if(!S.dayLog) S.dayLog={};
 if(!S.ticketUsedDates) S.ticketUsedDates=[];
-if(!S.bestStreak) S.bestStreak=calcBestStreak(S);
+const _ls=calcBestStreak(S);if(_ls>(S.bestStreak||0)) S.bestStreak=_ls;
 
 function save(){
   localStorage.setItem('slv8',JSON.stringify(S));
