@@ -640,6 +640,7 @@ function loadFromFirebase(){
       render();renderAvatar();
       document.getElementById('username-input').value=S.username||'';
       document.getElementById('motto-input').value=S.motto||'';
+      _patch504507();
     },
     err=>{
       document.getElementById('loading-overlay').classList.remove('show');
@@ -1300,6 +1301,23 @@ document.querySelector('[onclick="openModal(\'badge-pin\')"]')&&
 
 checkNewDay();render();renderAvatar();
 initFirebase();
+
+// ── One-time patch: restore 5/4-5/7 records ──
+function _patch504507(){
+  if(S._patch504507) return;
+  const patchDates=['2026-5-4','2026-5-5','2026-5-6','2026-5-7'];
+  const ids=(S.defaultHabitsOverride&&S.defaultHabitsOverride.length>0)
+    ?S.defaultHabitsOverride.slice(0,2).map(h=>h.id)
+    :['exercise','reading'];
+  patchDates.forEach(d=>{
+    if(!S.dayLog[d]) S.dayLog[d]=[];
+    ids.forEach(id=>{if(!S.dayLog[d].includes(id))S.dayLog[d].push(id);});
+    if(!S.doneDates.includes(d)) S.doneDates.push(d);
+  });
+  const c=calcBestStreak(S);if(c>(S.bestStreak||0))S.bestStreak=c;
+  S._patch504507=true;
+  save();render();
+}
 </script>
 </body>
 </html>
