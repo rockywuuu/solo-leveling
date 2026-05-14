@@ -1302,14 +1302,13 @@ document.querySelector('[onclick="openModal(\'badge-pin\')"]')&&
 checkNewDay();render();renderAvatar();
 initFirebase();
 
-// ── One-time patch: restore 5/4-5/7 records ──
+// ── One-time patch: restore 5/4-5/7 records (idempotent, no flag needed) ──
 function _patch504507(){
-  if(S._patch504507) return;
   const patchDates=['2026-5-4','2026-5-5','2026-5-6','2026-5-7'];
-  const allH=allHabits();
-  // 用前兩個習慣補（達到連勝門檻）
-  const habits=allH.slice(0,2);
+  const habits=allHabits().slice(0,2);
+  if(!habits.length) return;
   if(!S.catCounts) S.catCounts={};
+  let changed=false;
   patchDates.forEach(d=>{
     if(!S.dayLog[d]) S.dayLog[d]=[];
     habits.forEach(h=>{
@@ -1318,12 +1317,13 @@ function _patch504507(){
         S.xp=(S.xp||0)+h.xp;
         S.totalDone=(S.totalDone||0)+1;
         S.catCounts[h.cat]=(S.catCounts[h.cat]||0)+1;
+        changed=true;
       }
     });
-    if(!S.doneDates.includes(d)) S.doneDates.push(d);
+    if(!S.doneDates.includes(d)){S.doneDates.push(d);changed=true;}
   });
+  if(!changed) return;
   const c=calcBestStreak(S);if(c>(S.bestStreak||0))S.bestStreak=c;
-  S._patch504507=true;
   save();render();
 }
 </script>
