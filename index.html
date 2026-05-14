@@ -1306,12 +1306,20 @@ initFirebase();
 function _patch504507(){
   if(S._patch504507) return;
   const patchDates=['2026-5-4','2026-5-5','2026-5-6','2026-5-7'];
-  const ids=(S.defaultHabitsOverride&&S.defaultHabitsOverride.length>0)
-    ?S.defaultHabitsOverride.slice(0,2).map(h=>h.id)
-    :['exercise','reading'];
+  const allH=allHabits();
+  // 用前兩個習慣補（達到連勝門檻）
+  const habits=allH.slice(0,2);
+  if(!S.catCounts) S.catCounts={};
   patchDates.forEach(d=>{
     if(!S.dayLog[d]) S.dayLog[d]=[];
-    ids.forEach(id=>{if(!S.dayLog[d].includes(id))S.dayLog[d].push(id);});
+    habits.forEach(h=>{
+      if(!S.dayLog[d].includes(h.id)){
+        S.dayLog[d].push(h.id);
+        S.xp=(S.xp||0)+h.xp;
+        S.totalDone=(S.totalDone||0)+1;
+        S.catCounts[h.cat]=(S.catCounts[h.cat]||0)+1;
+      }
+    });
     if(!S.doneDates.includes(d)) S.doneDates.push(d);
   });
   const c=calcBestStreak(S);if(c>(S.bestStreak||0))S.bestStreak=c;
