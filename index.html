@@ -1302,27 +1302,27 @@ document.querySelector('[onclick="openModal(\'badge-pin\')"]')&&
 checkNewDay();render();renderAvatar();
 initFirebase();
 
-// ── One-time patch: restore 5/4-5/7 records (idempotent, no flag needed) ──
+// ── One-time patch: restore 5/4-5/7 records ──
 function _patch504507(){
   const patchDates=['2026-5-4','2026-5-5','2026-5-6','2026-5-7'];
   const habits=allHabits().slice(0,2);
   if(!habits.length) return;
   if(!S.catCounts) S.catCounts={};
-  let changed=false;
+  // Phase 1: ensure dayLog + doneDates exist (idempotent)
   patchDates.forEach(d=>{
     if(!S.dayLog[d]) S.dayLog[d]=[];
-    habits.forEach(h=>{
-      if(!S.dayLog[d].includes(h.id)){
-        S.dayLog[d].push(h.id);
-        S.xp=(S.xp||0)+h.xp;
-        S.totalDone=(S.totalDone||0)+1;
-        S.catCounts[h.cat]=(S.catCounts[h.cat]||0)+1;
-        changed=true;
-      }
-    });
-    if(!S.doneDates.includes(d)){S.doneDates.push(d);changed=true;}
+    habits.forEach(h=>{if(!S.dayLog[d].includes(h.id))S.dayLog[d].push(h.id);});
+    if(!S.doneDates.includes(d)) S.doneDates.push(d);
   });
-  if(!changed) return;
+  // Phase 2: add XP/totalDone/catCounts exactly once (new flag)
+  if(!S._patchXP504507){
+    habits.forEach(h=>{
+      S.xp=(S.xp||0)+h.xp*4;
+      S.totalDone=(S.totalDone||0)+4;
+      S.catCounts[h.cat]=(S.catCounts[h.cat]||0)+4;
+    });
+    S._patchXP504507=true;
+  }
   const c=calcBestStreak(S);if(c>(S.bestStreak||0))S.bestStreak=c;
   save();render();
 }
